@@ -14,7 +14,12 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:ui": "tsx scripts/verify-ui.ts",
-    "db:migrate": "tsx --env-file=.env.local scripts/migrate.ts"
+    "test:ui:live": "tsx scripts/verify-live-ui.ts",
+    "db:migrate": "tsx --env-file=.env.local scripts/migrate.ts",
+    "worker": "tsx --env-file=.env.local scripts/worker.ts",
+    "verify:connections": "tsx --env-file=.env.local scripts/verify-connections.ts",
+    "test:boundary": "tsx scripts/verify-boundary.ts",
+    "format:check": "prettier --check src scripts tests docs README.md db/README.md"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -37,6 +42,7 @@
     "@types/react-dom": "^19.2.3",
     "eslint": "^10.14.0",
     "eslint-config-next": "16.4.6",
+    "prettier": "^3.9.10",
     "tailwindcss": "4.3.5",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",

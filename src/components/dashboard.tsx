@@ -1,16 +1,306 @@
 "use client";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Check, Clock, FileText, Robot, Lightning, ChatCircle, ArrowBendDownRight } from "@phosphor-icons/react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Check,
+  Clock,
+  FileText,
+  Robot,
+  Lightning,
+  ChatCircle,
+  ArrowBendDownRight,
+} from "@phosphor-icons/react";
 import type { Dashboard } from "@/domain/models";
 import { Badge, ConnectionBadge, Modal, SectionTitle } from "./ui";
 import { useDemo } from "./demo-workspace";
 
-export function PageHeading({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: React.ReactNode }) {
-  return <div className="page-heading"><div><div className="overline mb-3">{eyebrow}</div><h1>{title}</h1><p className="muted mt-3 max-w-2xl">{description}</p></div>{action}</div>;
+export function PageHeading({
+  eyebrow,
+  title,
+  description,
+  action,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="page-heading">
+      <div>
+        <div className="overline mb-3">{eyebrow}</div>
+        <h1>{title}</h1>
+        <p className="muted mt-3 max-w-2xl">{description}</p>
+      </div>
+      {action}
+    </div>
+  );
 }
 export function Overview({ data }: { data: Dashboard }) {
   const { state, dispatch } = useDemo();
-  const decisions = data.decisions.filter(d => !state.reviewed.includes(d.id));
+  const decisions = data.decisions.filter(
+    (d) => !state.reviewed.includes(d.id),
+  );
   const isDemo = data.mode === "demo";
-  return <><PageHeading eyebrow="Jūsų darbo erdvė" title="Viskas prasideda nuo aiškumo." description={isDemo ? "Projektai, sprendimai ir kitas žingsnis — vienoje ramioje vietoje." : "Pokalbiai, patvirtinimai ir tikroji deleguoto darbo būsena."} action={<Link className="button button-primary" href="/chat"><ChatCircle size={18}/>Pradėti pokalbį<ArrowUpRight size={16}/></Link>}/><section className="attention-panel" aria-labelledby="attention-title"><div className="attention-intro"><span className="overline text-emerald-800">Dėmesio centre</span><h2 id="attention-title" className="text-2xl font-semibold tracking-tight mt-4">{decisions.length ? <>Jūsų sprendimo laukia <br/>{decisions.length === 1 ? "vienas klausimas." : `${decisions.length} klausimai.`}</> : "Galite susitelkti į kitą žingsnį."}</h2><p className="muted mt-4 max-w-sm">{isDemo ? "Peržiūrėkite pavyzdinius pasiūlymus. Pažymėjimas keičia tik šios naršyklės demonstraciją." : "Patvirtinkite tik peržiūrėję konkrečią užduotį, agentą ir apribojimus."}</p><span className="mt-6 inline-flex text-xs text-emerald-800 items-center gap-2"><span className="status-dot"/>{isDemo ? "Pavyzdinis sprendimų sąrašas" : "Savininkas valdo delegavimą"}</span></div><div className="attention-list">{decisions.length ? decisions.map((d,i) => <div key={d.id} className="decision-row"><span className="decision-number">0{i+1}</span><div className="flex-1 min-w-0"><p className="text-xs text-stone-500 mb-2">{d.project}</p><h3 className="font-semibold">{d.title}</h3></div><Modal title={d.title} description={d.detail} trigger={<button className="button button-small">Peržiūrėti<ArrowRight size={15}/></button>}><div className="notice mb-5">Demonstracija: ši peržiūra nesuteikia leidimo jokiam išoriniam veiksmui.</div><button className="button button-primary" onClick={() => dispatch({ type: "review", id: d.id })} disabled={state.reviewed.includes(d.id)}><Check size={17}/>{state.reviewed.includes(d.id) ? "Pažymėta" : "Pažymėti kaip peržiūrėtą"}</button><p className="muted text-xs mt-3">Būsena saugoma tik šioje naršyklėje.</p></Modal></div>) : <div className="p-7"><Check size={24} className="text-emerald-800 mb-3"/><p className="font-medium">Neperžiūrėtų pavyzdžių nėra</p><Link href="/chat" className="text-link mt-3">Pereiti į pokalbį<ArrowRight size={15}/></Link></div>}</div></section><div className="summary-strip"><div><span className="summary-value">{data.projects.length.toString().padStart(2,"0")}</span><span>Projektai{isDemo && <small>Pavyzdiniai</small>}</span></div><div><span className="summary-value">{data.tasks.length.toString().padStart(2,"0")}</span><span>Planuojamos užduotys{isDemo && <small>Vykdymas nepradėtas</small>}</span></div><div><span className="summary-value">—</span><span>Vykdomi agentų darbai<small>{isDemo ? "Tiesioginis ryšys neįjungtas" : "Žr. pokalbio vykdymo įrašus"}</small></span></div></div><div className="dashboard-grid"><div><section className="mb-10"><SectionTitle title="Aktyvios kryptys" href="/projects" action="Visi projektai"/><div className="panel divide-y divide-stone-100">{data.projects.length ? data.projects.slice(0,3).map(p=><Link key={p.id} href={`/projects#${p.id}`} className="project-row group"><span className="project-code">{p.code}</span><div className="flex-1 min-w-0"><h3 className="font-semibold group-hover:text-emerald-800">{p.name}</h3><p className="muted text-sm mt-1">{p.description}</p></div><div className="hidden sm:block"><Badge>{p.stage}</Badge></div><ArrowUpRight size={19} className="text-stone-400"/></Link>) : <p className="p-6 muted">Projektų dar nėra. Pradėkite nuo pokalbio ir apibrėžkite pirmą užduotį.</p>}</div></section><section><SectionTitle title="Naujausia veikla"/><div className="activity-list">{data.activity.length ? data.activity.map(a=><div className="activity-row" key={a.id}><span className="activity-icon"><FileText size={17}/></span><div className="flex-1"><h3 className="text-sm font-medium">{a.title}</h3><p className="text-xs text-stone-500 mt-1.5">{a.detail}</p></div><span className="text-xs text-stone-500 tabular-nums">{a.time}</span></div>) : <p className="muted">Išsaugojus pirmą pokalbį, jo eiga bus matoma čia.</p>}</div></section></div><aside className="space-y-8"><section><SectionTitle title="Sistemos būsena" href="/settings" action="Ryšiai"/><div className="panel px-5"><div className="status-row"><Robot size={20}/><div className="flex-1"><p className="text-sm font-medium">Agentai</p><p className="text-xs text-stone-500 mt-1">{isDemo ? "Vaidmenų peržiūra" : "Prieiga tikrinama pokalbyje"}</p></div><Badge tone="muted">{isDemo ? "Demo" : "Nežinoma"}</Badge></div><div className="status-row"><Lightning size={20}/><div className="flex-1"><p className="text-sm font-medium">Automatizacijos</p><p className="text-xs text-stone-500 mt-1">Vykdymai neįjungti</p></div><Badge tone="muted">Neprijungta</Badge></div></div></section><section><p className="overline mb-4">Programos ryšiai</p><div className="space-y-4">{data.connections.map(c=><div className="flex justify-between items-center gap-2" key={c.id}><span className="text-sm">{c.name}</span><ConnectionBadge state={c.state}/></div>)}</div><p className="text-xs text-stone-500 leading-relaxed mt-5">Codex įrankių prieiga nėra šios programos prisijungimas.</p></section><Link href="/improve" className="improve-link"><div className="flex items-center gap-2 text-sm font-semibold"><ArrowBendDownRight size={18}/>Erdvė, kuri auga kartu<ArrowUpRight size={16} className="ml-auto"/></div><p className="text-xs text-stone-500 leading-relaxed mt-2">Užrašykite, ką norėtumėte patobulinti savo valdymo centre.</p></Link></aside></div><div className="subtle-note"><Clock size={15}/>{isDemo ? "Tai demonstracinis scenarijus, ne tiesioginė veiklos ataskaita." : "Išorinių būsenų šviežumas rodomas prie vykdymo įrašų."}</div></>;
+  return (
+    <>
+      <PageHeading
+        eyebrow="Jūsų darbo erdvė"
+        title="Viskas prasideda nuo aiškumo."
+        description={
+          isDemo
+            ? "Projektai, sprendimai ir kitas žingsnis — vienoje ramioje vietoje."
+            : "Pokalbiai, patvirtinimai ir tikroji deleguoto darbo būsena."
+        }
+        action={
+          <Link className="button button-primary" href="/chat">
+            <ChatCircle size={18} />
+            Pradėti pokalbį
+            <ArrowUpRight size={16} />
+          </Link>
+        }
+      />
+      <section className="attention-panel" aria-labelledby="attention-title">
+        <div className="attention-intro">
+          <span className="overline text-emerald-800">Dėmesio centre</span>
+          <h2
+            id="attention-title"
+            className="text-2xl font-semibold tracking-tight mt-4"
+          >
+            {decisions.length ? (
+              <>
+                Jūsų sprendimo laukia <br />
+                {decisions.length === 1
+                  ? "vienas klausimas."
+                  : `${decisions.length} klausimai.`}
+              </>
+            ) : (
+              "Galite susitelkti į kitą žingsnį."
+            )}
+          </h2>
+          <p className="muted mt-4 max-w-sm">
+            {isDemo
+              ? "Peržiūrėkite pavyzdinius pasiūlymus. Pažymėjimas keičia tik šios naršyklės demonstraciją."
+              : "Patvirtinkite tik peržiūrėję konkrečią užduotį, agentą ir apribojimus."}
+          </p>
+          <span className="mt-6 inline-flex text-xs text-emerald-800 items-center gap-2">
+            <span className="status-dot" />
+            {isDemo
+              ? "Pavyzdinis sprendimų sąrašas"
+              : "Savininkas valdo delegavimą"}
+          </span>
+        </div>
+        <div className="attention-list">
+          {decisions.length ? (
+            decisions.map((d, i) => (
+              <div key={d.id} className="decision-row">
+                <span className="decision-number">0{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-stone-500 mb-2">{d.project}</p>
+                  <h3 className="font-semibold">{d.title}</h3>
+                </div>
+                <Modal
+                  title={d.title}
+                  description={d.detail}
+                  trigger={
+                    <button className="button button-small">
+                      Peržiūrėti
+                      <ArrowRight size={15} />
+                    </button>
+                  }
+                >
+                  <div className="notice mb-5">
+                    Demonstracija: ši peržiūra nesuteikia leidimo jokiam
+                    išoriniam veiksmui.
+                  </div>
+                  <button
+                    className="button button-primary"
+                    onClick={() => dispatch({ type: "review", id: d.id })}
+                    disabled={state.reviewed.includes(d.id)}
+                  >
+                    <Check size={17} />
+                    {state.reviewed.includes(d.id)
+                      ? "Pažymėta"
+                      : "Pažymėti kaip peržiūrėtą"}
+                  </button>
+                  <p className="muted text-xs mt-3">
+                    Būsena saugoma tik šioje naršyklėje.
+                  </p>
+                </Modal>
+              </div>
+            ))
+          ) : (
+            <div className="p-7">
+              <Check size={24} className="text-emerald-800 mb-3" />
+              <p className="font-medium">Neperžiūrėtų pavyzdžių nėra</p>
+              <Link href="/chat" className="text-link mt-3">
+                Pereiti į pokalbį
+                <ArrowRight size={15} />
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+      <div className="summary-strip">
+        <div>
+          <span className="summary-value">
+            {data.projects.length.toString().padStart(2, "0")}
+          </span>
+          <span>Projektai{isDemo && <small>Pavyzdiniai</small>}</span>
+        </div>
+        <div>
+          <span className="summary-value">
+            {data.tasks.length.toString().padStart(2, "0")}
+          </span>
+          <span>
+            Planuojamos užduotys{isDemo && <small>Vykdymas nepradėtas</small>}
+          </span>
+        </div>
+        <div>
+          <span className="summary-value">—</span>
+          <span>
+            Vykdomi agentų darbai
+            <small>
+              {isDemo
+                ? "Tiesioginis ryšys neįjungtas"
+                : "Žr. pokalbio vykdymo įrašus"}
+            </small>
+          </span>
+        </div>
+      </div>
+      <div className="dashboard-grid">
+        <div>
+          <section className="mb-10">
+            <SectionTitle
+              title="Aktyvios kryptys"
+              href="/projects"
+              action="Visi projektai"
+            />
+            <div className="panel divide-y divide-stone-100">
+              {data.projects.length ? (
+                data.projects.slice(0, 3).map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/projects#${p.id}`}
+                    className="project-row group"
+                  >
+                    <span className="project-code">{p.code}</span>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold group-hover:text-emerald-800">
+                        {p.name}
+                      </h3>
+                      <p className="muted text-sm mt-1">{p.description}</p>
+                    </div>
+                    <div className="hidden sm:block">
+                      <Badge>{p.stage}</Badge>
+                    </div>
+                    <ArrowUpRight size={19} className="text-stone-400" />
+                  </Link>
+                ))
+              ) : (
+                <p className="p-6 muted">
+                  Projektų dar nėra. Pradėkite nuo pokalbio ir apibrėžkite pirmą
+                  užduotį.
+                </p>
+              )}
+            </div>
+          </section>
+          <section>
+            <SectionTitle title="Naujausia veikla" />
+            <div className="activity-list">
+              {data.activity.length ? (
+                data.activity.map((a) => (
+                  <div className="activity-row" key={a.id}>
+                    <span className="activity-icon">
+                      <FileText size={17} />
+                    </span>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium">{a.title}</h3>
+                      <p className="text-xs text-stone-500 mt-1.5">
+                        {a.detail}
+                      </p>
+                    </div>
+                    <span className="text-xs text-stone-500 tabular-nums">
+                      {a.time}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="muted">
+                  Išsaugojus pirmą pokalbį, jo eiga bus matoma čia.
+                </p>
+              )}
+            </div>
+          </section>
+        </div>
+        <aside className="space-y-8">
+          <section>
+            <SectionTitle
+              title="Sistemos būsena"
+              href="/settings"
+              action="Ryšiai"
+            />
+            <div className="panel px-5">
+              <div className="status-row">
+                <Robot size={20} />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Agentai</p>
+                  <p className="text-xs text-stone-500 mt-1">
+                    {isDemo
+                      ? "Vaidmenų peržiūra"
+                      : "Prieiga tikrinama pokalbyje"}
+                  </p>
+                </div>
+                <Badge tone="muted">{isDemo ? "Demo" : "Nežinoma"}</Badge>
+              </div>
+              <div className="status-row">
+                <Lightning size={20} />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Automatizacijos</p>
+                  <p className="text-xs text-stone-500 mt-1">
+                    Vykdymai neįjungti
+                  </p>
+                </div>
+                <Badge tone="muted">Neprijungta</Badge>
+              </div>
+            </div>
+          </section>
+          <section>
+            <p className="overline mb-4">Programos ryšiai</p>
+            <div className="space-y-4">
+              {data.connections.map((c) => (
+                <div
+                  className="flex justify-between items-center gap-2"
+                  key={c.id}
+                >
+                  <span className="text-sm">{c.name}</span>
+                  <ConnectionBadge state={c.state} />
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-stone-500 leading-relaxed mt-5">
+              Codex įrankių prieiga nėra šios programos prisijungimas.
+            </p>
+          </section>
+          <Link href="/improve" className="improve-link">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <ArrowBendDownRight size={18} />
+              Erdvė, kuri auga kartu
+              <ArrowUpRight size={16} className="ml-auto" />
+            </div>
+            <p className="text-xs text-stone-500 leading-relaxed mt-2">
+              Užrašykite, ką norėtumėte patobulinti savo valdymo centre.
+            </p>
+          </Link>
+        </aside>
+      </div>
+      <div className="subtle-note">
+        <Clock size={15} />
+        {isDemo
+          ? "Tai demonstracinis scenarijus, ne tiesioginė veiklos ataskaita."
+          : "Išorinių būsenų šviežumas rodomas prie vykdymo įrašų."}
+      </div>
+    </>
+  );
 }

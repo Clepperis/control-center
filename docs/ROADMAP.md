@@ -15,4 +15,6 @@ Persist owner conversations and a bounded proposed plan in PostgreSQL. Verify ne
 
 ## Later phases
 
+Phase 2 implementation now includes durable conversations/proposals, exact confirmation, one-attempt delegation, status/results, a reconciliation worker and deterministic tests. Live end-to-end verification remains pending separate application credentials, local PostgreSQL, installed-contract checks, a ready allowed agent and explicit bounded-test approval. See [PHASE-2.md](PHASE-2.md); do not call the phase live-verified until those blockers are resolved.
+
 Connect n8n execution projections without duplicating scheduling; connect the private Markdown vault and rebuildable search; introduce isolated Improve System execution with review and production approval; then consider notifications, richer context and optional editors. Investment remains deferred.

@@ -22,4 +22,5 @@ test-results/
 .local/
 *.log
 *.tsbuildinfo
+next-env.d.ts
 .DS_Store

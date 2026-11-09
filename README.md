@@ -1,8 +1,8 @@
 # Personal AI Control Center
 
-A personal, self-hostable AI workspace for one owner. The product interface is Lithuanian; source identifiers and developer documentation are English. Phase 1 is a locally reviewable foundation with explicitly fictional demo content.
+A self-hostable AI workspace for one owner. The interface is Lithuanian; code and developer documentation are English. Phase 1 provides a polished demo. Phase 2 adds durable conversations and owner-confirmed delegation. Live account verification remains pending.
 
-## Local setup
+## Local demo
 
 Requires Node 22.13+ (Node 24 LTS recommended) and npm.
 
@@ -12,23 +12,39 @@ Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Open [the local workspace](http://127.0.0.1:3000). The default example explicitly enables development access and demo mode. No database or remote service is required for demo review. Use `cp .env.example .env.local` on Linux/macOS. Keep `.env.local` private.
+Open [the local workspace](http://127.0.0.1:3000). On Linux/macOS use `cp .env.example .env.local`. Do not overwrite an existing environment file. Default `AUTH_MODE=development` and `DATA_MODE=demo` explicitly enable local development access and isolated fictional data. No database or remote service is needed for demo review. Explore eight pages, decisions, local drafts, task filtering and reset.
+
+## Operational mode
+
+Use your own local PostgreSQL database, separate from Paperclip/n8n databases. Set `DATA_MODE=live` and `DATABASE_URL` in the ignored `.env.local`:
+
+```powershell
+npm run db:migrate
+npm run dev
+# Another terminal, same configuration:
+npm run worker
+```
+
+The live UI identifies missing setup and never substitutes demo data. Read [integration verification](docs/INTEGRATIONS.md), [environment variables](docs/ENVIRONMENT.md) and [Phase 2 behavior](docs/PHASE-2.md) before enabling live switches. Credentials belong only in `.env.local` or an approved secret store, never in chat. Application access is separate from Codex MCP/OAuth access.
 
 ## Commands
 
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Development server, loopback only |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | TypeScript |
-| `npm test` | Meaningful boundary tests |
-| `npm run build` | Production build |
-| `npm start` | Production server; development bypass is rejected |
+| Command                              | Purpose                                                                               |
+| ------------------------------------ | ------------------------------------------------------------------------------------- |
+| `npm run dev`                        | Loopback development server                                                           |
+| `npm run db:migrate`                 | Explicit, checksum-checked PostgreSQL migrations                                      |
+| `npm run worker`                     | Bounded reconciliation and interrupted-turn recovery; no model calls or task creation |
+| `npm run verify:connections`         | Explicit read-only operator/model-catalog probes                                      |
+| `npm run lint` / `npm run typecheck` | ESLint / TypeScript                                                                   |
+| `npm test`                           | PostgreSQL-engine, adapter, state machine and authentication tests                    |
+| `npm run test:ui`                    | Demo interactions against a running dev server                                        |
+| `npm run test:ui:live`               | Starts an isolated synthetic operational UI; stop other dev servers first             |
+| `npm run test:boundary`              | HTTP production authentication checks against the built app                           |
+| `npm run format:check`               | Source/document formatting                                                            |
+| `npm run build` / `npm start`        | Production build / loopback server; development bypass denied                         |
 
-To review the UI, open each navigation page, review a sample decision, save a chat/improvement/task draft, reload to confirm browser persistence, filter tasks, and reset the demo in Settings. These actions never execute AI work.
+Browser tests use installed Chrome (`BROWSER_CHANNEL=msedge` selects Edge). Generated screenshots and test data remain ignored under `.local`. Restricted Windows environments may require subprocess permission for tests/builds.
 
-## Environment
+Production requires a trusted OIDC login/session proxy plus independent signed-JWT owner verification. A production build alone is not deployment readiness. No deployment or remote infrastructure changes are included.
 
-`.env.example` contains placeholders only. `AUTH_MODE=development` is accepted only during development/test; production requires `oidc` with `OIDC_ISSUER`, `OIDC_AUDIENCE`, `OIDC_JWKS_URL` and `OWNER_SUBJECT`. `APP_ORIGIN` identifies the application's own origin. `DATA_MODE=demo` uses isolated fictional fixtures. A future live data provider uses PostgreSQL via `DATABASE_URL`. Integration variables are server-only placeholders and do not establish connectivity. Do not set `NEXT_PUBLIC_*` secrets.
-
-Read [architecture](docs/ARCHITECTURE.md), [integration boundaries](docs/INTEGRATIONS.md), and [delivery and roadmap](docs/ROADMAP.md) before future changes. The full local infrastructure/access audit, personal data, vault and credentials must never be committed to this public repository.
+Read [architecture](docs/ARCHITECTURE.md), [validation](docs/VALIDATION.md) and [roadmap](docs/ROADMAP.md) before future work. Keep the full local audit, private infrastructure addresses, personal data, vault and credentials out of this public repository.

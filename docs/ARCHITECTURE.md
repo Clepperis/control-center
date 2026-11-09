@@ -4,16 +4,16 @@ One owner, one modular TypeScript application. Next.js App Router and React prov
 
 ## Responsibilities
 
-| Owner | Responsibility |
-| --- | --- |
-| Control Center | Conversations, orchestration records, owner decisions, project references |
-| Custom orchestrator | Bounded planning, delegation, outcome checks |
-| Paperclip | Delegated tasks, scheduling, agent execution, budgets and execution approvals |
-| n8n | Automation executions and business schedules |
-| Markdown files | Authoritative approved knowledge; use a separate private vault |
-| PostgreSQL | Operational state and rebuildable search projections |
-| nexos.ai | Intended server-side model gateway |
-| Obsidian | Optional Markdown editor |
+| Owner               | Responsibility                                                                |
+| ------------------- | ----------------------------------------------------------------------------- |
+| Control Center      | Conversations, orchestration records, owner decisions, project references     |
+| Custom orchestrator | Bounded planning, delegation, outcome checks                                  |
+| Paperclip           | Delegated tasks, scheduling, agent execution, budgets and execution approvals |
+| n8n                 | Automation executions and business schedules                                  |
+| Markdown files      | Authoritative approved knowledge; use a separate private vault                |
+| PostgreSQL          | Operational state and rebuildable search projections                          |
+| nexos.ai            | Intended server-side model gateway                                            |
+| Obsidian            | Optional Markdown editor                                                      |
 
 `src/components` contains UI. `src/domain` contains models. `src/data` isolates replaceable dashboard access and fictional fixtures. `src/server` contains authentication and future operations. `src/integrations` defines domain-facing adapter boundaries. Credentials never belong in client components or `NEXT_PUBLIC_*` variables.
 
@@ -32,5 +32,7 @@ The intended production setup is a trusted OIDC login proxy in front of the appl
 The Phase 1 UI does not have production authentication configuration or a login screen. It fails closed with setup guidance. There is no public registration, custom password storage or multi-tenant model.
 
 ## Self-hosting
+
+Phase 2 adds `src/server/orchestration` (durable state machine), `src/server/db` (PostgreSQL/migrations), guarded `src/app/api` handlers and server-only adapters. Mutations enforce exact configured origin, JSON/body limits and owner identity. The separate worker reconciles status and cannot call models or create tasks. See [Phase 2 decisions](PHASE-2.md).
 
 Use a supported Node LTS on Linux ARM64, a reverse proxy and PostgreSQL when operational state is enabled. Next standalone output is prepared, but the ARM64 runtime has not been tested and no deployment has been performed. Do not copy a Windows `node_modules` directory onto Linux; install/build for the target platform. Resource limits, TLS, secret storage, backups, and restore tests are deployment prerequisites, not completed work.

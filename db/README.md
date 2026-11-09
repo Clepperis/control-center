@@ -1,5 +1,9 @@
 # PostgreSQL
 
+`002_orchestration.sql` adds owner conversations, idempotent turns, messages, immutable proposals/confirmation records, external references, leases and connection checks. Credentials are not stored here. Set `DATABASE_URL` privately and run `npm run db:migrate`; the runner uses an advisory transaction lock and checksums and applies pending files atomically. Do not edit applied migrations.
+
+Use separate migration/runtime database roles in production. Tests run these migrations in PGlite, including on-disk reopening. A conventional PostgreSQL server still needs live setup verification.
+
 Versioned SQL migrations are the schema source. Never write to Paperclip or n8n internal databases. The UI demo requires no database.
 
 `001_foundation.sql` defines local projects and a derived knowledge search index. Future operational records must reference external task IDs rather than duplicate Paperclip's task lifecycle. The index is not a knowledge authority. Use `simple` text search initially and evaluate Lithuanian/English queries before adding semantic search.
