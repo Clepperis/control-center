@@ -12,7 +12,8 @@ import {
   chunks,
   hash,
   lexemes,
-  searchQuery,
+  searchTerms,
+  requiredMatches,
   validateText,
   rejectSecrets,
 } from "./text";
@@ -469,19 +470,30 @@ export class KnowledgeService {
   ): Promise<Passage[]> {
     await this.files.ready();
     await this.project(owner, scope.projectId);
-    const query = searchQuery(z.string().max(4000).parse(text));
-    if (!query) return [];
+    const terms = searchTerms(z.string().max(4000).parse(text));
+    if (!terms.length) return [];
+    // Passages matching more of the question's terms always rank first.
     const results = (
       await this.db.query(
-        `WITH candidates AS (SELECT c.*,d.title,d.project_id,d.kind,
-      ts_rank_cd(c.search_text,to_tsquery('simple',$4)) AS score,
-      row_number() OVER (PARTITION BY d.id ORDER BY ts_rank_cd(c.search_text,to_tsquery('simple',$4)) DESC,c.passage) AS document_rank
+        `WITH matches AS (SELECT c.*,d.title,d.project_id,d.kind,
+      (SELECT count(*) FROM unnest($5::text[]) t WHERE c.search_text @@ to_tsquery('simple',t)) AS matched,
+      ts_rank_cd(c.search_text,to_tsquery('simple',$4)) AS score
       FROM knowledge_chunks c JOIN knowledge_documents d ON d.id=c.document_id
       WHERE d.owner_subject=$1 AND (d.project_id=$2::uuid OR ($3 AND d.project_id IS NULL))
       AND d.archived=false AND d.superseded_by IS NULL AND d.index_status='indexed'
       AND c.revision=d.revision AND c.content_hash=d.content_hash AND c.search_text @@ to_tsquery('simple',$4)
-      ) SELECT * FROM candidates WHERE document_rank<=2 ORDER BY score DESC,document_id,passage LIMIT 16`,
-        [owner, scope.projectId, scope.includeGlobal, query],
+      ), candidates AS (SELECT *,
+      row_number() OVER (PARTITION BY document_id ORDER BY matched DESC,score DESC,passage) AS document_rank
+      FROM matches WHERE matched>=$6
+      ) SELECT * FROM candidates WHERE document_rank<=2 ORDER BY matched DESC,score DESC,document_id,passage LIMIT 16`,
+        [
+          owner,
+          scope.projectId,
+          scope.includeGlobal,
+          terms.join(" | "),
+          terms,
+          requiredMatches(terms.length),
+        ],
       )
     ).rows;
     const checked = new Map<string, boolean>(),

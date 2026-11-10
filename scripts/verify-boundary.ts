@@ -64,6 +64,15 @@ for (const { mode, nodeEnv } of [
       await delay(200);
     }
     assert(ready, "Production boundary server did not start");
+    const headers = (await fetch(base)).headers;
+    const csp = headers.get("content-security-policy") ?? "";
+    assert(csp.includes("default-src 'self'"), "Missing CSP");
+    assert(csp.includes("frame-ancestors 'none'"), "CSP allows framing");
+    assert(!csp.includes("unsafe-eval"), "Production CSP allows eval");
+    assert(
+      headers.get("strict-transport-security")?.startsWith("max-age="),
+      "Missing HSTS",
+    );
     for (const path of ["/", "/chat", "/projects", "/settings"]) {
       const html = await (await fetch(base + path)).text();
       assert(html.includes("Reikia sukonfigūruoti prieigą"));

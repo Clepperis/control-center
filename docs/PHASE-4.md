@@ -147,8 +147,10 @@ PostgreSQL `simple` FTS, GIN, weighted title/heading matching and `ts_rank_cd`
 provide the baseline. The application normalizes Unicode accents and case for
 index/query, removes a small LT/EN stop-word set, and uses a small explicitly
 limited Lithuanian suffix-to-prefix query fallback. It does **not** claim a
-Lithuanian language analyzer. Query lexemes are escaped/parameterized, combined
-with AND, and capped at 12. Filtering by authenticated owner and selected project
+Lithuanian language analyzer. Query lexemes are escaped/parameterized and capped
+at 12. One- and two-term queries require every term; longer queries require two
+thirds of their terms, and passages matching more terms rank first. Filtering by
+authenticated owner and selected project
 or explicit global permission occurs in SQL before any model receives content.
 At most two passages per document enter a 16-candidate set; at most six passages
 reach the model. Search snippets are original plain text, not HTML from the DB.
@@ -163,7 +165,11 @@ global Lithuanian preference text is absent unless global scope is explicitly
 included. `keep notes without the internet` returns zero despite a related
 offline-export paragraph: **paraphrase retrieval is a demonstrated limitation**.
 This tiny fixture is a regression baseline, not a general retrieval benchmark.
-AND matching can miss long natural-language questions; prefixes may overmatch.
+The question `What is the Atlas release codename for the archive?` (three of four
+terms present) finds the Silver Otter passage, while `Copper Finch release
+codename` (two of four) still returns nothing in Atlas. Partial matching can
+still miss questions that share too few words with the source; prefixes may
+overmatch.
 
 No semantic toggle, embeddings client or vector schema exists. No nexos
 embeddings contract is assumed. Adding semantics requires owner approval of

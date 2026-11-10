@@ -118,6 +118,18 @@ describe("private authoritative Markdown and rebuildable PostgreSQL search", () 
       expect(results.every((p) => p.projectId === a)).toBe(true);
       measured.push({ query: q, hits: results.length });
     }
+    // A natural question rarely repeats every word of the source. Three of four
+    // terms is enough; two of four (an unrelated project's name plus generic
+    // words) is not.
+    const question = await s.search(
+      owner,
+      scope(),
+      "What is the Atlas release codename for the archive?",
+    );
+    expect(question[0]?.content).toContain("Silver Otter");
+    expect(
+      await s.search(owner, scope(), "Copper Finch release codename"),
+    ).toHaveLength(0);
     expect(await s.search(owner, scope(), "lietuviški")).toHaveLength(0);
     expect(
       await s.search(owner, { ...scope(), includeGlobal: true }, "lietuviški"),
