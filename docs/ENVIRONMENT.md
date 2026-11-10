@@ -30,6 +30,15 @@ Copy `.env.example` to `.env.local` once. Never overwrite existing secrets. All 
 
 Demo review needs no credentials. Phase 2 needs only application PostgreSQL, nexos and Paperclip setup. n8n, mail, hosting, Telegram and vault access are not required.
 
+Phase 5 uses `IMPROVEMENT_EXECUTOR_ENABLED` (default false), the explicit allowed
+`IMPROVEMENT_REPOSITORY` and `IMPROVEMENT_TARGET_BRANCH`, an optional separate
+`IMPROVEMENT_GITHUB_READ_TOKEN` (Contents/Actions read only), and
+`IMPROVEMENT_POLICY_FILE` (absolute operator-owned file outside the checkout and
+agent filesystems). These do not grant runtime or deployment credentials. The
+existing worker now handles explicit Phase 5 model/planning jobs and exactly
+authorized task submission, while earlier reconciliation paths retain their
+read-only behavior. Read [policy verification, isolation and disabling](PHASE-5.md).
+
 Phase 4 additionally uses server-only `KNOWLEDGE_ROOT`: an absolute, private,
 persistent Markdown directory outside the public checkout and its parents.
 Web and worker must share it. There is no default vault, folder scanning,

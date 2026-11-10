@@ -33,3 +33,12 @@ Development MCP reads and the dedicated draft's validation/readback succeeded. A
 `demo`, `disconnected`, `unavailable` and `verified` are distinct. A URL is insufficient. Successful application checks have timestamps; stale results and errors remain visible. Development MCP success never marks application access verified.
 
 Markdown remains authoritative; no private vault is uploaded or indexed. Knowledge and project memory are the next phase. n8n retains workflow definitions, executions and business schedules; Control Center implements only explicitly reviewed manual requests.
+
+Phase 4 now implements explicitly selected private Markdown knowledge and memory.
+Phase 5 adds one gated Paperclip coding adapter using documented issue/isolation
+settings and interrupt/cancel controls, plus fixed-origin GitHub source/diff/CI
+reads. Read-only development MCP still finds only paused coding capacity. The
+application REST creation/workspace/cancellation path and sandbox/budget controls
+are unverified. A policy file is operator attestation, not proof that those
+controls work. See [Phase 5 capability boundary](PHASE-5.md); leave execution off
+until the specific real coding example is separately approved and setup verified.

@@ -32,9 +32,18 @@ verify application behavior. Real model answer quality and the eventual
 PostgreSQL-server/filesystem/ARM64 deployment remain unverified. See
 [Phase 4](PHASE-4.md). No embeddings or private data ingestion was enabled.
 
-## Next: dedicated Improve System agent
+## Phase 5
 
-Introduce isolated execution with one bounded task, a reviewable diff, tests and
-explicit production approval. Paperclip owns delegated work; n8n owns workflow
-execution. Then consider notifications, richer context and optional editors.
-Investment remains deferred.
+Dedicated Platform Engineer conversations, selected implementation/knowledge
+context, versioned plans, server-enforced implementation consent, durable jobs,
+one gated Paperclip coding adapter, exact candidate/CI evidence, owner self-review
+and manual integration consent are implemented. Deterministic tests cover the
+lifecycle and recovery. Real coding/runtime/sandbox/budget/cancellation capability
+remains unverified and disabled. See [Phase 5](PHASE-5.md).
+
+## Next: Phase 6 deployment boundary
+
+First verify the separately approved isolated coding example. Then establish an
+exact-revision deployment approval path, target runtime, identity proxy, secret
+separation, quotas, backup/restore, health checks and rollback. No deployment was
+performed. Notifications, optional editors and investment remain deferred.

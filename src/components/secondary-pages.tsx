@@ -6,7 +6,6 @@ import {
   Plus,
   BookOpen,
   ArrowRight,
-  PaperPlaneTilt,
   FileText,
   ShieldCheck,
   Circle,
@@ -341,65 +340,6 @@ export function Knowledge({ demo }: { demo: boolean }) {
           </Modal>
         </section>
       )}
-    </>
-  );
-}
-export function Improve({ demo }: { demo: boolean }) {
-  return (
-    <>
-      <PageHeading
-        eyebrow="Tobulinti sistemą"
-        title="Tobulinti sistemą"
-        description="Atskiras tobulinimo agentas ateityje rengs izoliuotus pakeitimus, testus ir peržiūrą."
-      />
-      <div className="grid lg:grid-cols-[1.5fr_1fr] gap-8">
-        <section className="panel p-6 sm:p-8">
-          {demo ? (
-            <DraftForm
-              kind="improve"
-              label="Ką norėtumėte patobulinti?"
-              placeholder="Aprašykite problemą, norimą rezultatą ir kaip jį patikrintumėte…"
-            />
-          ) : (
-            <>
-              <h2 className="font-semibold text-xl">
-                Parenkite ribotą užduotį pokalbyje
-              </h2>
-              <p className="muted mt-3 mb-5">
-                Nurodykite norimą pakeitimą, priėmimo kriterijus ir apribojimus.
-                Delegavimui reikės atskiro patvirtinimo.
-              </p>
-              <Link href="/chat" className="button button-primary">
-                Atverti pokalbį
-                <PaperPlaneTilt size={17} />
-              </Link>
-            </>
-          )}
-        </section>
-        <aside>
-          <h2 className="font-semibold text-lg flex items-center gap-2">
-            <ShieldCheck size={22} />
-            Nuo pasiūlymo iki peržiūros
-          </h2>
-          <ol className="steps">
-            <li>
-              <span>01</span>Aiški užduotis ir ribos
-            </li>
-            <li>
-              <span>02</span>Atskira darbo aplinka
-            </li>
-            <li>
-              <span>03</span>Testai, pakeitimai ir peržiūra
-            </li>
-            <li>
-              <span>04</span>Savininko leidimas produkcijai
-            </li>
-          </ol>
-          <p className="muted text-sm">
-            Produkcijos pakeitimai šiame etape nevykdomi.
-          </p>
-        </aside>
-      </div>
     </>
   );
 }

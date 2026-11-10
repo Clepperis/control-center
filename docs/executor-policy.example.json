@@ -1,0 +1,28 @@
+{
+  "revision": "REPLACE-AFTER-OPERATOR-VERIFICATION",
+  "repository": "Clepperis/control-center",
+  "projectId": "00000000-0000-4000-8000-000000000001",
+  "agentId": "00000000-0000-4000-8000-000000000002",
+  "environmentId": "00000000-0000-4000-8000-000000000003",
+  "maxRuntimeSeconds": 120,
+  "maxCostUsd": 1,
+  "diskMb": 512,
+  "logBytes": 12000,
+  "network": ["api.openai.com", "github.com"],
+  "dependencyInstall": "disabled",
+  "verifiedAt": "2026-01-01T00:00:00.000Z",
+  "expiresAt": "2026-01-01T01:00:00.000Z",
+  "agentConfigHash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "projectConfigHash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "attestation": {
+    "authenticatedCodingRuntime": false,
+    "isolatedFilesystem": false,
+    "noProductionCredentials": false,
+    "minimalEnvironment": false,
+    "networkEnforced": false,
+    "hardBudgetEnforced": false,
+    "diskAndLogsEnforced": false,
+    "cancellationTested": false,
+    "protectedPathsEnforced": false
+  }
+}

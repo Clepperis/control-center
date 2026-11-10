@@ -75,6 +75,8 @@ for (const { mode, nodeEnv } of [
       "/api/automations",
       "/api/knowledge",
       "/api/knowledge?op=projects",
+      "/api/improvements",
+      "/api/improvements?op=readiness",
       "/api/conversations/22222222-2222-4222-8222-222222222222",
     ]) {
       const response = await fetch(base + path);
@@ -89,6 +91,7 @@ for (const { mode, nodeEnv } of [
     for (const path of [
       "/api/automations",
       "/api/knowledge",
+      "/api/improvements",
       "/api/automations/22222222-2222-4222-8222-222222222222",
     ]) {
       const response = await fetch(base + path, {

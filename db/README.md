@@ -19,3 +19,11 @@ Private Markdown/history and operational PostgreSQL need separate backups.
 `001_foundation.sql` defines local projects and a derived knowledge search index. Future operational records must reference external task IDs rather than duplicate Paperclip's task lifecycle. The index is not a knowledge authority. Use `simple` text search initially and evaluate Lithuanian/English queries before adding semantic search.
 
 Migrations require a separate application database and a controlled local migration step. Do not put database credentials on a command line or run migrations against remote services during development.
+
+`005_improvements.sql` adds owner-scoped private change requests, versioned JSON
+state/consent/evidence, durable leased jobs with a single active step per request,
+and deduplicated sanitized error-signal groups. It does not create a second task
+platform: Paperclip still owns delegated coding work. The existing worker handles
+finite planning/submission/reconciliation steps. No recurring repairs or
+deployment jobs exist. Back up these private records; never export them into a
+public PR or repository.

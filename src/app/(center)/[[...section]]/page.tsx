@@ -9,6 +9,7 @@ import {
 } from "@/components/live-workspace";
 import { setupStatus } from "@/server/runtime";
 import { AutomationWorkspace } from "@/components/automations";
+import { ImprovementWorkspace } from "@/components/improvements";
 import {
   KnowledgeWorkspace,
   ProjectKnowledgeLinks,
@@ -20,7 +21,6 @@ import {
   Projects,
   Agents,
   Knowledge,
-  Improve,
   Settings,
 } from "@/components/secondary-pages";
 export default async function Page({
@@ -78,7 +78,7 @@ export default async function Page({
     case "knowledge":
       return <Knowledge demo={data.mode === "demo"} />;
     case "improve":
-      return <Improve demo={data.mode === "demo"} />;
+      return <ImprovementWorkspace live={data.mode === "live"} />;
     case "settings":
       return <Settings data={data} authMode={session.mode} />;
     default:

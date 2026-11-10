@@ -7,6 +7,7 @@ import { IntegrationError } from "@/integrations/errors";
 import { errorLabels } from "@/domain/orchestration";
 import { automationErrors } from "@/domain/automations";
 import { knowledgeErrors } from "@/domain/knowledge";
+import { improvementErrors } from "@/domain/improvements";
 export async function readJson(request: Request, maxBytes = 32000) {
   const origin = process.env.APP_ORIGIN;
   if (!origin || request.headers.get("origin") !== origin)
@@ -72,6 +73,7 @@ export async function api(fn: (owner: string) => Promise<unknown>) {
             labels[error.code] ??
             automationErrors[error.code] ??
             knowledgeErrors[error.code] ??
+            improvementErrors[error.code] ??
             "Užklausa netinkama.",
           code: error.code,
         },

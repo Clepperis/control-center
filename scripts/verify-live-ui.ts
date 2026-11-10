@@ -12,6 +12,7 @@ import { openTestDatabase } from "../tests/pglite";
 import { migrate } from "../src/server/db/migrate";
 import { Store } from "../src/server/orchestration/store";
 import { OrchestrationService } from "../src/server/orchestration/service";
+import { verifyImprovementUi } from "./improvement-ui-scenario";
 import type { ExternalTask } from "../src/integrations/contracts";
 const base = "http://127.0.0.1:3100";
 async function captureReview(page: Page, name: string) {
@@ -326,6 +327,12 @@ try {
   ).toBe(true);
   await verifyAutomationUi(page, store, owner, base, captureReview);
   await verifyKnowledgeUi(page, store, owner, base, knowledgeUi);
+  const improvementPage = await context.newPage();
+  try {
+    await verifyImprovementUi(improvementPage, store, owner, base);
+  } finally {
+    await improvementPage.close();
+  }
   for (const path of [
     "",
     "chat",

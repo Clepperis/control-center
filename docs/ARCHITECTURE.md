@@ -17,7 +17,7 @@ One owner, one modular TypeScript application. Next.js App Router and React prov
 
 `src/components` contains UI. `src/domain` contains models. `src/data` isolates replaceable dashboard access and fictional fixtures. `src/server` contains authentication and future operations. `src/integrations` defines domain-facing adapter boundaries. Credentials never belong in client components or `NEXT_PUBLIC_*` variables.
 
-The Improve System role will use a bounded task, isolated checkout and execution environment, tests, a reviewable diff, and explicit production approval. A Git branch alone is not execution isolation. Investment functionality is deferred.
+The Improve System role uses a bounded task, isolated checkout and execution environment, tests, a reviewable diff, and separate implementation/integration consent. Deployment is reserved for Phase 6. A Git branch alone is not execution isolation. Investment functionality is deferred.
 
 ## Research interpretation
 
@@ -32,6 +32,17 @@ The intended production setup is a trusted OIDC login proxy in front of the appl
 The Phase 1 UI does not have production authentication configuration or a login screen. It fails closed with setup guidance. There is no public registration, custom password storage or multi-tenant model.
 
 ## Self-hosting
+
+Phase 5 adds `src/server/improvements` to the existing application and worker.
+PostgreSQL owns request conversations, versioned plans, exact owner consent,
+leases and private evidence. One Paperclip coding adapter requests fixed isolated
+workspace settings under operator-verified sandbox limits. A fixed-origin GitHub
+read adapter supplies pinned source context and actual candidate/CI evidence.
+The worker may call the gateway only for explicit durable Phase 5 discussion/
+investigation jobs, and may create one task only after exact implementation
+consent. Phase 2 reconciliation still cannot invoke its gateway or create tasks.
+Owner self-review and manual exact-commit integration consent remain separate;
+there is no deploy API. See [Phase 5 boundaries and blockers](PHASE-5.md).
 
 Phase 4 adds `src/server/knowledge` to the existing application and worker.
 Private Markdown outside the checkout is authoritative; immutable file revisions

@@ -1751,3 +1751,100 @@ textarea.input {
     animation: none !important;
   }
 }
+/* Phase 5 uses the existing neutral workspace tokens and shared controls. */
+.improve-layout {
+  display: grid;
+  grid-template-columns: minmax(230px, 300px) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.improve-list {
+  min-width: 0;
+  border-right: 1px solid var(--border, #292929);
+  padding-right: 22px;
+}
+.improve-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  text-align: left;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+.improve-item:hover,
+.improve-item.is-selected {
+  background: #1a1a1a;
+}
+.improve-item .muted {
+  font-size: 11px;
+}
+.improve-section {
+  border-top: 1px solid var(--border, #292929);
+  padding-top: 18px;
+}
+.improve-setup {
+  padding: 14px 16px;
+  background: #151515;
+  border-radius: 6px;
+}
+.improve-conversation {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 560px;
+  overflow-y: auto;
+}
+.improve-message {
+  padding: 14px;
+  border-left: 2px solid #333;
+  overflow-wrap: anywhere;
+}
+.improve-message-user {
+  background: #161616;
+  border-left-color: #5e6ad2;
+}
+.improve-check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  line-height: 1.6;
+}
+.improve-check input {
+  margin-top: 4px;
+  flex-shrink: 0;
+  accent-color: #5e6ad2;
+}
+.improve-code {
+  max-height: 420px;
+  overflow: auto;
+  background: #111;
+  padding: 14px;
+  border: 1px solid #292929;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre;
+}
+.improve-bullets {
+  padding-left: 20px;
+  margin: 8px 0;
+  list-style: disc;
+  overflow-wrap: anywhere;
+}
+.improve-layout summary,
+.improve-setup summary {
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 900px) {
+  .improve-layout {
+    grid-template-columns: 1fr;
+  }
+  .improve-list {
+    border-right: 0;
+    border-bottom: 1px solid #292929;
+    padding: 0 0 22px;
+  }
+}

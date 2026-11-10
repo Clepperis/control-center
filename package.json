@@ -20,6 +20,7 @@
     "worker": "tsx --env-file=.env.local scripts/worker.ts",
     "knowledge:index": "tsx --env-file=.env.local scripts/knowledge-index.ts",
     "verify:connections": "tsx --env-file=.env.local scripts/verify-connections.ts",
+    "verify:platform": "tsx --env-file=.env.local scripts/verify-platform.ts",
     "verify:n8n": "tsx --env-file=.env.local scripts/verify-n8n.ts",
     "test:boundary": "tsx scripts/verify-boundary.ts",
     "format:check": "prettier --check src scripts tests docs README.md db/README.md"

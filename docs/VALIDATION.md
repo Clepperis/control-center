@@ -1,5 +1,49 @@
 # Validation record
 
+## Phase 5
+
+Validated locally on Windows / Node 24.16 with Playwright's matching Chromium:
+
+- 107 tests across 11 suites pass, including all earlier auth, chat/Paperclip,
+  n8n, private knowledge and citation regressions. New tests cover exact plan/
+  policy consent, stale versions/base/candidate/CI/target, duplicate intake,
+  ambiguous submission, scope and path restrictions, strict executor input,
+  common-pattern secret redaction, owner isolation, bounded retries, deferred
+  cancellation/late results, deadline cancellation, rejected/cancelled state
+  preservation, follow-up isolation and real on-disk database restart recovery.
+- The actual guarded improvement HTTP handlers are tested with a substituted
+  owner/database factory. The real model transport is exercised with deterministic
+  HTTP responses to verify no tools or model-selected authority and separation of
+  injected work content from system instructions. No real completion is claimed.
+- The operational browser suite passes the dedicated workspace at 1440/390px:
+  persisted discussion, investigation, missing-runtime blocker, displayed budget/
+  base/plan consent, single delegated substitute, actual UI diff/evidence display,
+  structured owner self-review, stale-candidate rejection and manual integration
+  handoff surviving reload. Runtime/HTTP errors are checked; only the deliberately
+  injected 503/409 failures are expected in the new failure scenarios. Earlier
+  Paperclip/n8n/knowledge/citation browser scenarios still pass.
+- AA axe scans and reflow pass for the new workflow at desktop/mobile sizes;
+  synthetic captures were visually inspected and remain ignored. All eight demo
+  routes pass interactions and AA scans at 1440/1024/390px, with keyboard focus,
+  mobile navigation, dialogs, draft persistence and reset intact.
+- ESLint, TypeScript, formatting, production build and production HTTP boundary
+  checks pass. The new API/readiness reads and mutations deny unauthorized
+  access. Standalone traces/artifacts exclude audit, environment and local data.
+- New CI runs the unchanged named lint/types/tests/build/browser commands with
+  read-only permissions, no application/model/production secrets, dependency
+  lifecycle hooks disabled and synthetic-only screenshot artifacts. Candidate
+  evidence reads exact GitHub branch/SHA/workflow/attempt/job results and requires
+  the unchanged base workflow; missing UI captures or failed checks block review.
+
+This is **deterministic application verification**, not live self-improvement.
+Read-only development MCP confirmed Paperclip access and only a paused agent.
+Application REST submission/workspace/cancellation, authenticated coding runtime,
+enforced per-task spend/isolation controls and a real isolated coding run remain
+unverified. The executor defaults off. No paid agent/model run, merge, deployment,
+production change or recurring repair was performed. Conventional PostgreSQL,
+ARM64, production authentication and restore verification remain outstanding.
+See [Phase 5 setup, exact pending example and Phase 6 prerequisites](PHASE-5.md).
+
 ## Phase 4
 
 Validated locally on Windows, Node 24.16 and installed Chrome:

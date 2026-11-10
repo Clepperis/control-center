@@ -18,6 +18,7 @@ import type { Database } from "./db/types";
 import { configuredAutomations } from "./automations/configured";
 import { KnowledgeService } from "./knowledge/service";
 import { MarkdownFiles } from "./knowledge/files";
+import { configuredImprovements } from "./improvements/configured";
 const globalDb = globalThis as typeof globalThis & {
   controlCenterDb?: Database;
 };
@@ -73,6 +74,12 @@ export function getKnowledgeService() {
   return new KnowledgeService(
     getStore().db,
     new MarkdownFiles(process.env.KNOWLEDGE_ROOT ?? ""),
+  );
+}
+export function getImprovementService() {
+  return configuredImprovements(
+    getStore().db,
+    process.env.KNOWLEDGE_ROOT ? getKnowledgeService() : null,
   );
 }
 export function setupStatus() {
