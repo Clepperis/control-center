@@ -8,7 +8,6 @@ import {
   Lightning,
   ArrowRight,
   PaperPlaneTilt,
-  Wrench,
   FileText,
   ShieldCheck,
 } from "@phosphor-icons/react";
@@ -38,7 +37,7 @@ export function DraftForm({
   }
   return (
     <>
-      <form onSubmit={submit} className="space-y-4">
+      <form onSubmit={submit} className="draft-form space-y-4">
         <label className="block text-sm font-medium" htmlFor={`draft-${kind}`}>
           {label}
         </label>
@@ -86,11 +85,11 @@ export function DemoChat() {
     <>
       <PageHeading
         eyebrow="Pokalbis"
-        title="Nuo minties iki aiškaus plano."
-        description="Čia prasidės pokalbiai ir deleguojamo darbo planai."
+        title="Pokalbis"
+        description="Užrašykite mintį. Demonstracijoje ji liks vietiniu juodraščiu."
       />
-      <div className="panel max-w-4xl mx-auto">
-        <div className="p-6 sm:p-10 border-b border-stone-100">
+      <div className="demo-chat">
+        <div className="demo-chat-intro">
           <Badge tone="accent">Demonstracinis režimas</Badge>
           <h2 className="text-xl font-semibold mt-5">
             Ką norėtumėte nuveikti?
@@ -99,18 +98,8 @@ export function DemoChat() {
             Galite užrašyti mintį peržiūrai. Tikras atsakymas bus galimas
             sukonfigūravus programos modelio prieigą.
           </p>
-          <div className="flex flex-wrap gap-2 mt-6">
-            <span className="suggestion">
-              <FileText size={15} />
-              Susisteminti dokumentus
-            </span>
-            <span className="suggestion">
-              <Wrench size={15} />
-              Patobulinti valdymo centrą
-            </span>
-          </div>
         </div>
-        <div className="p-6 sm:p-10">
+        <div>
           <DraftForm
             kind="chat"
             label="Jūsų mintis"
@@ -128,7 +117,7 @@ export function Projects({ data }: { data: Dashboard }) {
     <>
       <PageHeading
         eyebrow="Projektai ir užduotys"
-        title="Kiekvienai krypčiai — savo vieta."
+        title="Projektai ir užduotys"
         description="Projektai jungia tikslus, žinias ir darbus. Agentų užduočių vykdymą valdys Paperclip."
         action={
           data.mode === "demo" ? (
@@ -156,9 +145,9 @@ export function Projects({ data }: { data: Dashboard }) {
           )
         }
       />
-      <div className="space-y-4 mb-10">
+      <div className="panel divide-y divide-stone-100 mb-10">
         {data.projects.map((p) => (
-          <article id={p.id} key={p.id} className="panel project-row">
+          <article id={p.id} key={p.id} className="project-row">
             <span className="project-code">{p.code}</span>
             <div className="flex-1">
               <h2 className="font-semibold text-lg">{p.name}</h2>
@@ -183,32 +172,46 @@ export function Projects({ data }: { data: Dashboard }) {
         <option value="planned">Planuojama</option>
         <option value="waiting">Laukia sprendimo</option>
       </select>
-      <div className="panel divide-y divide-stone-100">
-        {data.tasks
-          .filter((t) => filter === "all" || t.state === filter)
-          .map((t) => (
-            <div className="project-row" key={t.id}>
-              <FileText size={20} />
-              <div className="flex-1">
-                <h3 className="font-medium">{t.title}</h3>
-                <p className="muted text-xs mt-2">
-                  {data.projects.find((p) => p.id === t.projectId)?.name}
-                </p>
-              </div>
-              <Badge>
-                {
-                  {
-                    review: "Laukia peržiūros",
-                    planned: "Planuojama",
-                    waiting: "Laukia sprendimo",
-                  }[t.state]
-                }
-              </Badge>
-            </div>
-          ))}
-        {data.tasks.filter((t) => filter === "all" || t.state === filter)
-          .length === 0 && (
-          <p className="p-6 muted">Šiame sąraše užduočių nėra.</p>
+      <div className="task-groups">
+        {(["review", "waiting", "planned"] as const).map((status) => {
+          const items = data.tasks.filter(
+            (t) =>
+              t.state === status && (filter === "all" || filter === status),
+          );
+          const label = {
+            review: "Laukia peržiūros",
+            waiting: "Laukia sprendimo",
+            planned: "Planuojama",
+          }[status];
+          return items.length ? (
+            <section className="task-group" aria-label={label} key={status}>
+              <h3 className="task-group-heading">
+                {label}
+                <span>{items.length}</span>
+              </h3>
+              {items.map((t) => (
+                <div
+                  id={t.id}
+                  className="project-row border-b border-stone-100"
+                  key={t.id}
+                >
+                  <FileText size={18} />
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm">{t.title}</h4>
+                    <p className="muted text-xs mt-1">
+                      {data.projects.find((p) => p.id === t.projectId)?.name}
+                    </p>
+                  </div>
+                  <Badge tone={status === "review" ? "warning" : "muted"}>
+                    {label}
+                  </Badge>
+                </div>
+              ))}
+            </section>
+          ) : null;
+        })}
+        {!data.tasks.some((t) => filter === "all" || t.state === filter) && (
+          <p className="muted py-6">Šiame sąraše užduočių nėra.</p>
         )}
       </div>
       {state.drafts
@@ -227,7 +230,7 @@ export function Agents({ data }: { data: Dashboard }) {
     <>
       <PageHeading
         eyebrow="Agentai"
-        title="Aiškūs vaidmenys. Apibrėžtos ribos."
+        title="Agentai"
         description="Paperclip valdo deleguotas užduotis, vykdymą, biudžetus ir savo patvirtinimus."
       />
       <div className="panel divide-y divide-stone-100">
@@ -267,7 +270,7 @@ export function Automations() {
     <>
       <PageHeading
         eyebrow="Automatizacijos"
-        title="Rutina, kuri turi savo ritmą."
+        title="Automatizacijos"
         description="Darbo eigas ir jų tvarkaraščius valdys n8n. Šis centras rodys jų būseną ir rezultatus."
       />
       <div className="panel">
@@ -302,7 +305,7 @@ export function Knowledge({ demo }: { demo: boolean }) {
     <>
       <PageHeading
         eyebrow="Žinios ir atmintis"
-        title="Kontekstas, kuriuo galima pasitikėti."
+        title="Žinios ir atmintis"
         description="Markdown failai bus patvirtintų žinių šaltinis. Paieškos indeksą bus galima atkurti iš jų."
       />
       <div className="panel">
@@ -358,7 +361,7 @@ export function Improve({ demo }: { demo: boolean }) {
     <>
       <PageHeading
         eyebrow="Tobulinti sistemą"
-        title="Geresnė erdvė prasideda nuo idėjos."
+        title="Tobulinti sistemą"
         description="Atskiras tobulinimo agentas ateityje rengs izoliuotus pakeitimus, testus ir peržiūrą."
       />
       <div className="grid lg:grid-cols-[1.5fr_1fr] gap-8">
@@ -425,7 +428,7 @@ export function Settings({
     <>
       <PageHeading
         eyebrow="Nustatymai ir ryšiai"
-        title="Jūsų sistema. Matomos ribos."
+        title="Nustatymai ir ryšiai"
         description="Čia matoma šios programos prieiga. Kūrimo įrankių prisijungimai savaime neperduodami programai."
       />
       <SectionTitle title="Programos ryšiai" />

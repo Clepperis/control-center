@@ -59,9 +59,7 @@ function Brand() {
       </span>
       <span>
         Control Center
-        <span className="block text-[11px] uppercase tracking-[.18em] text-stone-500 font-medium mt-1">
-          Asmeninė darbo erdvė
-        </span>
+        <span className="brand-caption">Asmeninė darbo erdvė</span>
       </span>
     </Link>
   );
@@ -86,7 +84,7 @@ export function Shell({
       </a>
       <aside className="sidebar">
         <Brand />
-        <div className="mt-12 mb-4 px-3 overline">Darbo erdvė</div>
+        <div className="sidebar-label overline">Darbo erdvė</div>
         <Navigation />
         <div className="sidebar-footer">
           <span className="owner-avatar">S</span>
@@ -156,7 +154,7 @@ export function Shell({
             </span>
           )}
         </div>
-        <main id="main-content" className="page-container">
+        <main id="main-content" className="page-container" tabIndex={-1}>
           {children}
         </main>
         <footer className="page-footer">

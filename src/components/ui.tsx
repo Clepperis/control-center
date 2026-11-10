@@ -2,7 +2,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, ArrowUpRight, Circle } from "@phosphor-icons/react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import type { ConnectionState } from "@/domain/models";
 
 export function Badge({
@@ -10,7 +10,7 @@ export function Badge({
   tone = "neutral",
 }: {
   children: ReactNode;
-  tone?: "neutral" | "accent" | "muted";
+  tone?: "neutral" | "accent" | "muted" | "positive" | "warning" | "danger";
 }) {
   return <span className={`badge badge-${tone}`}>{children}</span>;
 }
@@ -22,7 +22,15 @@ export function ConnectionBadge({ state }: { state: ConnectionState }) {
     verified: "Patikrinta",
   };
   return (
-    <Badge tone={state.kind === "verified" ? "accent" : "neutral"}>
+    <Badge
+      tone={
+        state.kind === "verified"
+          ? "positive"
+          : state.kind === "unavailable"
+            ? "warning"
+            : "muted"
+      }
+    >
       <Circle size={6} weight="fill" />
       {labels[state.kind]}
     </Badge>
@@ -38,7 +46,7 @@ export function SectionTitle({
   action?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 mb-5">
+    <div className="section-title">
       <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
       {href && (
         <Link className="text-link" href={href}>
@@ -60,12 +68,23 @@ export function Modal({
   trigger: ReactNode;
   children: ReactNode;
 }) {
+  const triggerRef = useRef<HTMLButtonElement>(null);
   return (
     <Dialog.Root>
-      <Dialog.Trigger asChild>{trigger}</Dialog.Trigger>
+      <Dialog.Trigger ref={triggerRef} asChild>
+        {trigger}
+      </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="modal-overlay" />
-        <Dialog.Content className="modal-content">
+        <Dialog.Content
+          className="modal-content"
+          onCloseAutoFocus={(event) => {
+            if (!triggerRef.current?.isConnected) {
+              event.preventDefault();
+              document.getElementById("main-content")?.focus();
+            }
+          }}
+        >
           <Dialog.Title className="text-xl font-semibold pr-8">
             {title}
           </Dialog.Title>

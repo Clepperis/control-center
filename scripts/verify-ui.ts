@@ -15,7 +15,7 @@ try {
   await mkdir(".local/screenshots", { recursive: true });
   await page.goto(base);
   await expect(
-    page.getByRole("heading", { name: "Viskas prasideda nuo aiškumo." }),
+    page.getByRole("heading", { name: "Apžvalga", exact: true }),
   ).toBeVisible();
   await page.screenshot({
     path: ".local/screenshots/overview-desktop.png",

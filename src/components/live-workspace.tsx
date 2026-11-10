@@ -16,6 +16,8 @@ import {
   Plus,
   ArrowClockwise,
   WarningCircle,
+  CaretRight,
+  Circle,
 } from "@phosphor-icons/react";
 import {
   errorLabels,
@@ -26,7 +28,7 @@ import {
   type Run,
   type Turn,
 } from "@/domain/orchestration";
-import { PageHeading } from "./dashboard";
+import { PageHeading, WorkspaceStatus, RecentActivity } from "./dashboard";
 import { Badge, EmptyState, SectionTitle } from "./ui";
 import type { Agent, Dashboard } from "@/domain/models";
 export interface Setup {
@@ -61,15 +63,39 @@ async function request<T>(
 export function RunCard({
   run,
   onChange,
+  defaultOpen = false,
 }: {
   run: DisplayRun;
   onChange?: (r: DisplayRun) => void;
+  defaultOpen?: boolean;
 }) {
-  const [current, setCurrent] = useState(run);
+  const version = [
+    run.state,
+    run.syncedAt,
+    run.errorCode,
+    run.tracking,
+    run.confirmedAt,
+    run.externalTaskId,
+  ].join("|");
+  const [update, setUpdate] = useState<{
+    source: string;
+    value: DisplayRun;
+  } | null>(null);
+  const current = update?.source === version ? update.value : run;
+  const [expanded, setExpanded] = useState(defaultOpen);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  // Parent snapshots carry worker updates; keyed parent refresh remounts this card.
   const stale = isStale(current.syncedAt);
+  const tone =
+    current.state === "completed"
+      ? "positive"
+      : current.state === "failed"
+        ? "danger"
+        : ["blocked", "awaiting_confirmation"].includes(current.state)
+          ? "warning"
+          : ["running", "review"].includes(current.state)
+            ? "accent"
+            : "muted";
   async function act(action: "confirm" | "refresh" | "stop") {
     setBusy(true);
     setError("");
@@ -80,7 +106,7 @@ export function RunCard({
           ? { action, planHash: current.planHash }
           : { action },
       );
-      setCurrent(next);
+      setUpdate({ source: version, value: next });
       onChange?.(next);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Veiksmas nepavyko.");
@@ -88,197 +114,270 @@ export function RunCard({
       setBusy(false);
     }
   }
+  const agent =
+    current.plan.agentName ??
+    (current.plan.agentId ? "Pasirinktas agentas" : "Agentas nepriskirtas");
   return (
-    <article className="run-card">
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <Badge tone={current.state === "completed" ? "accent" : "neutral"}>
-          {runLabels[current.state]}
-        </Badge>
-        {current.externalTaskId &&
-          stale &&
-          !["completed", "cancelled", "failed"].includes(current.state) && (
-            <Badge>Duomenys pasenę</Badge>
-          )}
-        {!current.tracking && <Badge>Stebėjimas sustabdytas</Badge>}
-      </div>
-      <h3 className="text-lg font-semibold">{current.plan.title}</h3>
-      <p className="muted text-sm mt-2">{current.plan.objective}</p>
-      <div className="mt-5 text-sm space-y-4">
-        <div>
-          <p className="overline mb-2">Ribota užduotis</p>
-          <p className="whitespace-pre-wrap break-words">
-            {current.plan.boundedTask}
-          </p>
+    <details
+      id={`run-${current.id}`}
+      className="run-card"
+      open={expanded}
+      onToggle={(e) => setExpanded(e.currentTarget.open)}
+    >
+      <summary className="run-summary">
+        <Circle size={14} className={`run-state-${current.state}`} />
+        <div className="min-w-0">
+          <h3>{current.plan.title}</h3>
+          <div className="run-row-meta">
+            <Badge tone={tone}>{runLabels[current.state]}</Badge>
+            <span>{agent}</span>
+            <time dateTime={current.syncedAt ?? current.createdAt}>
+              {new Date(current.syncedAt ?? current.createdAt).toLocaleString(
+                "lt-LT",
+                { timeZone: "Europe/Vilnius" },
+              )}
+            </time>
+            {current.externalTaskId &&
+              stale &&
+              !["completed", "cancelled", "failed"].includes(current.state) && (
+                <Badge tone="warning">Duomenys pasenę</Badge>
+              )}
+            {!current.tracking && (
+              <Badge tone="muted">Stebėjimas sustabdytas</Badge>
+            )}
+          </div>
         </div>
-        <div>
-          <p className="overline mb-2">Siūlomas agentas</p>
-          <p>
-            {current.plan.agentName ??
-              (current.plan.agentId
-                ? "Agentas pažymėtu identifikatoriumi"
-                : "Nepriskirtas — reikia parengti agentą")}
-          </p>
-          {current.plan.agentId && (
-            <code className="text-xs text-stone-500 break-all">
-              {current.plan.agentId}
-            </code>
-          )}
-        </div>
-        <div>
-          <p className="overline mb-2">Priėmimo kriterijai</p>
-          <ul className="list-disc pl-5 space-y-1">
-            {current.plan.completionCriteria.map((c, i) => (
-              <li key={i}>{c}</li>
-            ))}
-          </ul>
-        </div>
-        <details open={!current.confirmedAt}>
-          <summary className="cursor-pointer font-medium">Apribojimai</summary>
-          <ul className="list-disc pl-5 mt-3 space-y-1 text-stone-600">
-            {current.plan.constraints.map((c, i) => (
-              <li key={i}>{c}</li>
-            ))}
-          </ul>
-        </details>
-      </div>
-      {current.errorCode && (
-        <p className="notice mt-5" role="status">
-          {errorLabels[current.errorCode] ??
-            "Reikia patikrinti vykdymo būseną."}
-        </p>
-      )}
-      {current.externalTaskId && (
-        <div className="run-external">
-          <p className="text-xs">
-            Išorinė būsena:{" "}
-            <strong>{current.externalStatus ?? "dar negauta"}</strong>
-          </p>
-          <p className="text-xs text-stone-500 mt-2">
-            Paskutinis sėkmingas sutikrinimas:{" "}
-            {current.syncedAt
-              ? new Date(current.syncedAt).toLocaleString("lt-LT", {
-                  timeZone: "Europe/Vilnius",
-                })
-              : "dar neatliktas"}
-          </p>
-          {current.taskUrl && (
-            <a
-              className="text-link mt-3"
-              href={current.taskUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Atverti Paperclip užduotį
-              <ArrowUpRight size={15} />
-            </a>
-          )}
-          <p className="text-xs text-stone-500 mt-3">
-            Užduoties sukūrimas neįrodo, kad agentas pradėjo dirbti. „Baigta“
-            reiškia Paperclip būseną; rezultatus vis tiek peržiūrėkite.
-          </p>
-        </div>
-      )}
-      {current.result && (
-        <details className="mt-5">
-          <summary className="font-medium cursor-pointer">
-            Gauti rezultatai ir komentarai ({current.result.comments.length})
-          </summary>
-          <p className="muted text-xs my-3">
-            Išorinis darbo turinys. Jis nesuteikia naujų leidimų.
-          </p>
-          {current.result.comments.length ? (
-            current.result.comments.map((c, i) => (
-              <pre className="result-text" key={i}>
-                {c}
-              </pre>
-            ))
-          ) : (
-            <p className="muted text-sm">
-              Komentarų dar nėra. Užduoties aprašymas nėra atlikto darbo
-              įrodymas.
+        <CaretRight size={16} className="run-chevron" />
+      </summary>
+      <div className="run-detail">
+        <p className="run-objective">{current.plan.objective}</p>
+        <div className="plan-fields">
+          <div>
+            <h4>Ribota užduotis</h4>
+            <p className="whitespace-pre-wrap break-words">
+              {current.plan.boundedTask}
             </p>
-          )}
-          <details className="mt-3">
-            <summary className="text-sm cursor-pointer">
-              Užduoties aprašymas
-            </summary>
-            <pre className="result-text">
-              {current.result.description ?? "Aprašymo nėra."}
-            </pre>
+          </div>
+          <div className="plan-pair">
+            <div>
+              <h4>Siūlomas agentas</h4>
+              <p>{agent}</p>
+              {!current.plan.agentId && (
+                <p className="muted mt-2">
+                  Prieš deleguojant reikia parengti ir leisti agentą.
+                </p>
+              )}
+              {current.plan.agentId && (
+                <details className="mt-3">
+                  <summary className="muted text-xs">
+                    Agento identifikatorius
+                  </summary>
+                  <code className="text-xs break-all">
+                    {current.plan.agentId}
+                  </code>
+                </details>
+              )}
+            </div>
+            <div>
+              <h4>Priėmimo kriterijai</h4>
+              <ul className="list-disc pl-5 space-y-1">
+                {current.plan.completionCriteria.map((c, i) => (
+                  <li key={i}>{c}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <details open={!current.confirmedAt}>
+            <summary className="text-sm font-medium">Apribojimai</summary>
+            <ul className="list-disc pl-5 mt-3 space-y-1 text-stone-600">
+              {current.plan.constraints.map((c, i) => (
+                <li key={i}>{c}</li>
+              ))}
+            </ul>
           </details>
-        </details>
-      )}
-      <div className="flex flex-wrap gap-2 mt-6">
-        {current.state === "awaiting_confirmation" && !current.confirmedAt && (
-          <button
-            disabled={busy}
-            className="button button-primary"
-            onClick={() => act("confirm")}
-          >
-            Patvirtinti ir deleguoti
-            <ArrowRight size={16} />
-          </button>
+        </div>
+        {current.errorCode && (
+          <p className="notice notice-warning mt-5" role="status">
+            {errorLabels[current.errorCode] ??
+              "Reikia patikrinti vykdymo būseną."}
+          </p>
         )}
-        {current.confirmedAt && (
-          <button
-            disabled={busy}
-            className="button"
-            onClick={() => act("refresh")}
+        <div className="run-external">
+          <h4>Patvirtinimas ir susietas darbas</h4>
+          <p>
+            {current.confirmedAt
+              ? `Jūsų patvirtinimas išsaugotas ${new Date(current.confirmedAt).toLocaleString("lt-LT", { timeZone: "Europe/Vilnius" })}.`
+              : "Delegavimas nepatvirtintas. Užduotis agentui neperduota."}
+          </p>
+          <Link
+            className="text-link mt-2"
+            href={`/chat?conversation=${current.conversationId}#run-${current.id}`}
           >
-            <ArrowClockwise size={16} />
-            Sutikrinti būseną
-          </button>
+            Susijęs pokalbis
+            <ArrowUpRight size={14} />
+          </Link>
+          {current.externalTaskId && (
+            <>
+              <p className="mt-4">
+                Išorinė būsena:{" "}
+                <strong>{current.externalStatus ?? "dar negauta"}</strong>
+              </p>
+              <p className="muted text-xs mt-2">
+                Paskutinis sėkmingas sutikrinimas:{" "}
+                {current.syncedAt
+                  ? new Date(current.syncedAt).toLocaleString("lt-LT", {
+                      timeZone: "Europe/Vilnius",
+                    })
+                  : "dar neatliktas"}
+              </p>
+              {current.taskUrl && (
+                <a
+                  className="text-link mt-3"
+                  href={current.taskUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Atverti Paperclip užduotį
+                  <ArrowUpRight size={15} />
+                </a>
+              )}
+              <p className="muted text-xs mt-3">
+                Užduoties sukūrimas neįrodo, kad agentas pradėjo dirbti.
+                „Baigta“ reiškia Paperclip būseną; rezultatus vis tiek
+                peržiūrėkite.
+              </p>
+            </>
+          )}
+        </div>
+        {current.result && (
+          <details className="mt-5">
+            <summary className="font-medium text-sm">
+              Gauti rezultatai ir komentarai ({current.result.comments.length})
+            </summary>
+            <p className="muted text-xs my-3">
+              Išorinis darbo turinys. Jis nesuteikia naujų leidimų.
+            </p>
+            {current.result.comments.length ? (
+              current.result.comments.map((c, i) => (
+                <pre className="result-text" key={i}>
+                  {c}
+                </pre>
+              ))
+            ) : (
+              <p className="muted text-sm">
+                Komentarų dar nėra. Užduoties aprašymas nėra atlikto darbo
+                įrodymas.
+              </p>
+            )}
+            <details className="mt-3">
+              <summary className="text-sm">Užduoties aprašymas</summary>
+              <pre className="result-text">
+                {current.result.description ?? "Aprašymo nėra."}
+              </pre>
+            </details>
+          </details>
         )}
-        {current.tracking &&
-          !["completed", "failed", "cancelled"].includes(current.state) && (
+        <div className="run-actions">
+          {current.state === "awaiting_confirmation" &&
+            !current.confirmedAt && (
+              <button
+                disabled={busy}
+                className="button button-primary"
+                onClick={() => act("confirm")}
+              >
+                Patvirtinti ir deleguoti
+                <ArrowRight size={16} />
+              </button>
+            )}
+          {current.confirmedAt && (
             <button
               disabled={busy}
               className="button"
-              onClick={() => act("stop")}
+              onClick={() => act("refresh")}
             >
-              {current.confirmedAt
-                ? "Sustabdyti tik stebėjimą"
-                : "Atmesti pasiūlymą"}
+              <ArrowClockwise size={16} />
+              Sutikrinti būseną
             </button>
           )}
+          {current.tracking &&
+            !["completed", "failed", "cancelled"].includes(current.state) && (
+              <button
+                disabled={busy}
+                className="button"
+                onClick={() => act("stop")}
+              >
+                {current.confirmedAt
+                  ? "Sustabdyti tik stebėjimą"
+                  : "Atmesti pasiūlymą"}
+              </button>
+            )}
+        </div>
+        {!current.confirmedAt && current.state === "awaiting_confirmation" && (
+          <p className="muted text-xs mt-3">
+            Patvirtinimas gali pradėti agento darbą ir naudoti Paperclip
+            nustatytą biudžetą. Jokių produkcijos pakeitimų neleidžiama.
+          </p>
+        )}
+        {!current.tracking && current.confirmedAt && (
+          <p className="notice mt-4">
+            Sustabdytas tik vietinis stebėjimas. Išorinis Paperclip darbas
+            nebuvo atšauktas.
+          </p>
+        )}
+        {busy && (
+          <p className="muted text-sm mt-3" role="status">
+            Tikrinama ir išsaugoma…
+          </p>
+        )}
+        {error && (
+          <p className="form-error mt-4" role="alert">
+            {error}
+          </p>
+        )}
       </div>
-      {!current.confirmedAt && current.state === "awaiting_confirmation" && (
-        <p className="text-xs text-stone-500 mt-3">
-          Patvirtinimas gali pradėti agento darbą ir naudoti Paperclip nustatytą
-          biudžetą. Jokių produkcijos pakeitimų neleidžiama.
-        </p>
-      )}
-      {!current.tracking && current.confirmedAt && (
-        <p className="notice mt-4">
-          Sustabdytas tik vietinis stebėjimas. Išorinis Paperclip darbas nebuvo
-          atšauktas.
-        </p>
-      )}
-      {busy && (
-        <p className="muted text-sm mt-3" role="status">
-          Tikrinama ir išsaugoma…
-        </p>
-      )}
-      {error && (
-        <p className="form-error mt-4" role="alert">
-          {error}
-        </p>
-      )}
-    </article>
+    </details>
   );
 }
-export function RunFeed({ runs }: { runs: DisplayRun[] }) {
+
+export function RunFeed({
+  runs,
+  conversation = false,
+}: {
+  runs: DisplayRun[];
+  conversation?: boolean;
+}) {
+  const groups = [
+    { title: "Laukia jūsų sprendimo", states: ["awaiting_confirmation"] },
+    { title: "Reikia dėmesio", states: ["blocked", "failed"] },
+    {
+      title: "Aktyvūs darbai",
+      states: ["delegating", "delegated", "running", "review"],
+    },
+    { title: "Užbaigti ir atšaukti", states: ["completed", "cancelled"] },
+  ];
+  const cards = (items: DisplayRun[]) =>
+    items.map((run) => (
+      <RunCard key={run.id} run={run} defaultOpen={conversation} />
+    ));
+  if (conversation) return <div className="run-list">{cards(runs)}</div>;
   return (
-    <div className="space-y-5">
-      {runs.map((run) => (
-        <RunCard
-          key={`${run.id}-${run.state}-${run.syncedAt}-${run.errorCode}-${run.tracking}`}
-          run={run}
-        />
-      ))}
+    <div className="run-groups">
+      {groups.map((group) => {
+        const items = runs.filter((r) => group.states.includes(r.state));
+        return items.length ? (
+          <section key={group.title} aria-label={group.title}>
+            <div className="run-group-title">
+              {group.title}
+              <span>{items.length}</span>
+            </div>
+            <div className="run-list">{cards(items)}</div>
+          </section>
+        ) : null;
+      })}
     </div>
   );
 }
+
 export function LiveOverview({
   data,
   runs,
@@ -299,19 +398,18 @@ export function LiveOverview({
   const active = runs.filter((r) =>
     ["delegating", "delegated", "running", "review"].includes(r.state),
   );
-  const blocked = runs.filter(
-    (r) => r.state === "blocked" || r.state === "failed",
-  );
+  const blocked = runs.filter((r) => ["blocked", "failed"].includes(r.state));
   return (
     <>
       <PageHeading
         eyebrow="Savininko darbo erdvė"
-        title="Jūsų darbų eiga — vienoje vietoje."
-        description="Išsaugoti pokalbiai, patvirtinimai ir Paperclip pateikta būsena."
+        title="Apžvalga"
+        description="Sprendimai, darbai ir paskutinė išsaugota jų būsena."
         action={
           <Link href="/chat" className="button button-primary">
-            <ChatCircle size={18} />
+            <ChatCircle size={17} />
             Atverti pokalbį
+            <ArrowUpRight size={15} />
           </Link>
         }
       />
@@ -334,71 +432,46 @@ export function LiveOverview({
           <span>Reikia dėmesio</span>
         </div>
       </div>
-      <div className="live-grid">
-        <section>
-          <SectionTitle
-            title={
-              pending.length
-                ? "Jūsų sprendimo laukiantys planai"
-                : "Naujausi vykdymo įrašai"
-            }
-          />
-          {runs.length ? (
-            <RunFeed
-              runs={[
-                ...pending,
-                ...runs.filter((r) => r.state !== "awaiting_confirmation"),
-              ].slice(0, 10)}
+      <div className="overview-layout">
+        <div className="overview-main">
+          <section>
+            <SectionTitle
+              title="Darbų eiga"
+              href="/projects"
+              action="Visi įrašai"
             />
-          ) : (
-            <div className="panel">
-              <EmptyState
-                title={
-                  error
-                    ? "Darbo būsena kol kas nepasiekiama"
-                    : "Pirmas žingsnis — pokalbis"
-                }
-              >
-                {error
-                  ? "Sukonfigūruokite operacinių duomenų saugyklą. Kol ji nepasiekiama, darbų kiekis nežinomas."
-                  : "Aprašykite nedidelę užduotį. Modelis pateiks atsakymą arba ribotą planą jūsų peržiūrai."}
-                <div className="mt-5">
-                  <Link href="/chat" className="button">
-                    Pradėti
-                    <ArrowRight size={16} />
-                  </Link>
-                </div>
-              </EmptyState>
-            </div>
-          )}
-        </section>
-        <aside>
-          <SectionTitle title="Naujausia veikla" />
-          <div className="space-y-4">
-            {data.activity.map((a) => (
-              <div className="border-b border-stone-200 pb-4" key={a.id}>
-                <p className="font-medium text-sm">{a.title}</p>
-                <p className="muted text-xs mt-2">{a.detail}</p>
-                <p className="muted text-xs mt-2">{a.time}</p>
+            {runs.length ? (
+              <RunFeed runs={runs} />
+            ) : (
+              <div className="panel">
+                <EmptyState
+                  title={
+                    error
+                      ? "Darbo būsena kol kas nepasiekiama"
+                      : "Pirmas žingsnis — pokalbis"
+                  }
+                >
+                  {error
+                    ? "Kol duomenų saugykla nepasiekiama, darbų kiekis nežinomas."
+                    : "Aprašykite nedidelę užduotį. Modelis pateiks atsakymą arba ribotą planą jūsų peržiūrai."}
+                  <div className="mt-5">
+                    <Link href="/chat" className="button">
+                      Atverti pokalbį
+                      <ArrowRight size={16} />
+                    </Link>
+                  </div>
+                </EmptyState>
               </div>
-            ))}
-            {!data.activity.length && (
-              <p className="muted text-sm">
-                {error
-                  ? "Veiklos istorija nepasiekiama."
-                  : "Išsaugotų įvykių dar nėra."}
-              </p>
             )}
-          </div>
-          <Link href="/settings" className="text-link mt-6">
-            Programos ryšiai
-            <ArrowUpRight size={15} />
-          </Link>
-        </aside>
+          </section>
+          <RecentActivity activity={data.activity} error={error} />
+        </div>
+        <WorkspaceStatus data={data} />
       </div>
     </>
   );
 }
+
 export function LiveChat({ setup }: { setup: Setup }) {
   const search = useSearchParams();
   const firstId = search.get("conversation");
@@ -521,8 +594,8 @@ export function LiveChat({ setup }: { setup: Setup }) {
     <>
       <PageHeading
         eyebrow="Pokalbis ir planavimas"
-        title="Aiški mintis. Peržiūrimas kitas žingsnis."
-        description="Pokalbio istorija saugoma PostgreSQL. Darbai deleguojami tik po jūsų patvirtinimo."
+        title="Pokalbis"
+        description="Atsakymai, planai ir deleguotų darbų eiga."
       />
       <div className="chat-layout">
         <aside className="chat-history">
@@ -550,20 +623,29 @@ export function LiveChat({ setup }: { setup: Setup }) {
           )}
         </aside>
         <section className="panel chat-main">
-          <div className="chat-setup">
-            <p>
-              <strong>Modelis:</strong> {setup.model}
-            </p>
-            <p className="mt-2">
-              <strong>Paperclip:</strong> {setup.paperclip}
-            </p>
-            {!setup.database && (
-              <p className="mt-2">
-                <strong>PostgreSQL:</strong> nurodykite DATABASE_URL ir
-                pritaikykite migracijas.
+          <details
+            className="chat-setup"
+            open={!setup.database || !setup.modelEnabled}
+          >
+            <summary>
+              Ryšio parengtis
+              <CaretRight size={15} />
+            </summary>
+            <div>
+              <p>
+                <strong>Modelis:</strong> {setup.model}
               </p>
-            )}
-          </div>
+              <p className="mt-2">
+                <strong>Paperclip:</strong> {setup.paperclip}
+              </p>
+              {!setup.database && (
+                <p className="mt-2">
+                  <strong>PostgreSQL:</strong> nurodykite DATABASE_URL ir
+                  pritaikykite migracijas.
+                </p>
+              )}
+            </div>
+          </details>
           {loading && (
             <p className="p-6 muted" role="status">
               Tikrinama išsaugota būsena…
@@ -611,9 +693,12 @@ export function LiveChat({ setup }: { setup: Setup }) {
                 </p>
               ))}
             {snapshot && (
-              <div className="mt-6">
-                <RunFeed runs={snapshot.runs} />
-              </div>
+              <section className="mt-6" aria-label="Delegavimo planai">
+                {snapshot.runs.length > 0 && (
+                  <h2 className="overline mb-4">Delegavimo planai</h2>
+                )}
+                <RunFeed runs={snapshot.runs} conversation />
+              </section>
             )}
           </div>
           <form className="chat-composer" onSubmit={send}>
@@ -716,7 +801,7 @@ export function LiveAgents() {
     <>
       <PageHeading
         eyebrow="Agentai"
-        title="Tikroji agentų parengtis."
+        title="Agentai"
         description="Tikrinama programos operatoriaus prieiga ir leidžiamų agentų sąrašas. Agentai neaktyvuojami ir jų nustatymai nekeičiami."
         action={
           <button className="button" disabled={busy} onClick={check}>

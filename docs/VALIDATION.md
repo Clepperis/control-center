@@ -24,3 +24,13 @@ No production deployment or ARM64 runtime validation has been performed. Real in
 - Full `npm audit` reports zero vulnerabilities. Formatting checks pass. Private audit/environment files and generated data are ignored; staged content was checked for private infrastructure identifiers and credential patterns.
 
 **Not verified:** live model completion, installed Paperclip REST write/result contract with application credentials, agent execution, conventional PostgreSQL-server connectivity, real production IdP/proxy, or ARM64 runtime. Separate application credentials are missing and a ready agent has not been established. No live model calls, external task creation, workflow executions, deployments or infrastructure changes were performed. Follow [the concrete remaining setup/test steps](PHASE-2.md).
+
+## Phase 2.5
+
+- Actual before/after captures were reviewed at 1440px, 1024px and 390px using matching demo and synthetic conversation states. Self-contained HTML/PNG comparisons and the original captures remain ignored under `.local/phase-2-5`.
+- All eight demo routes at three widths, decision dialog and mobile drawer have zero axe A/AA-tagged violations. Keyboard checks pass for skip links, focus trapping/return, fallback after removing a reviewed decision, mobile navigation and reduced motion. There was no page-level horizontal overflow.
+- The updated synthetic live suite passes, including proposal/result accessibility scans, keyboard expansion, retained expansion after refresh, exact confirmation, one task creation, status/results, errors and local-only stop. No unexpected browser console/runtime errors were recorded. The composer was corrected to normal flow after visual inspection showed sticky positioning could cover the plan.
+- Lint, type-check, 32 deterministic tests, production build, production-artifact authentication boundary, formatting and full dependency audit pass. The audit reports zero vulnerabilities.
+- No server, integration, domain or migration behavior was changed. New dependencies are limited to a development accessibility test tool. Secrets, the private audit and third-party reference images were excluded from the public commit.
+
+Automated checks are not a complete screen-reader or assistive-technology audit. Live integrations, production identity-provider configuration and ARM64 testing retain the Phase 2 limitations above. This phase makes no deployment or remote application-setting changes.

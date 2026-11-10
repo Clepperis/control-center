@@ -1,16 +1,34 @@
-import { chromium, expect } from "@playwright/test";
+import { chromium, expect, type Page } from "@playwright/test";
 import { spawn } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 import { createServer } from "node:net";
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { mkdir } from "node:fs/promises";
+import AxeBuilder from "@axe-core/playwright";
 import { openTestDatabase } from "../tests/pglite";
 import { migrate } from "../src/server/db/migrate";
 import { Store } from "../src/server/orchestration/store";
 import { OrchestrationService } from "../src/server/orchestration/service";
 import type { ExternalTask } from "../src/integrations/contracts";
 const base = "http://127.0.0.1:3100";
+async function captureReview(page: Page, name: string) {
+  if (!process.env.REVIEW_CAPTURE_DIR) return;
+  await mkdir(process.env.REVIEW_CAPTURE_DIR, { recursive: true });
+  for (const width of [1440, 1024, 390]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
+    await page.evaluate(() => {
+      window.scrollTo(0, 0);
+      if (document.activeElement instanceof HTMLElement)
+        document.activeElement.blur();
+    });
+    await page.screenshot({
+      path: `${process.env.REVIEW_CAPTURE_DIR}/${name}-${width}.png`,
+      fullPage: true,
+    });
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+}
 const db = await openTestDatabase();
 await migrate(db, resolve("db/migrations"));
 const store = new Store(db);
@@ -148,9 +166,10 @@ try {
       })
     ).status,
   ).toBe(403);
-  const page = await browser.newPage({
+  const context = await browser.newContext({
     viewport: { width: 1440, height: 1000 },
   });
+  const page = await context.newPage();
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => {
@@ -188,6 +207,23 @@ try {
   ).toBeVisible();
   await expect(page.getByLabel("Jūsų žinutė")).toBeDisabled();
   expect(createCount).toBe(0);
+  const proposalScan = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+    .analyze();
+  expect(proposalScan.violations).toEqual([]);
+  await captureReview(page, "chat-proposal");
+  const row = page.locator(".run-card").first();
+  await row.locator(":scope > summary").focus();
+  await page.keyboard.press("Enter");
+  await expect(row).not.toHaveAttribute("open", "");
+  await page.getByRole("button", { name: "Atnaujinti peržiūrą" }).click();
+  await expect(row).not.toHaveAttribute("open", "");
+  await row.locator(":scope > summary").focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("button", { name: "Patvirtinti ir deleguoti" }),
+  ).toBeVisible();
+  expect(createCount).toBe(0);
   await page.getByRole("button", { name: "Patvirtinti ir deleguoti" }).click();
   await expect(
     page.getByText("Užduotis sukurta", { exact: true }),
@@ -222,6 +258,7 @@ try {
       exact: true,
     }),
   ).toBeVisible();
+  await captureReview(page, "chat-result");
   await mkdir(".local/screenshots", { recursive: true });
   await page.evaluate(() => {
     window.scrollTo(0, 0);
@@ -233,6 +270,10 @@ try {
     fullPage: true,
   });
   await page.setViewportSize({ width: 390, height: 844 });
+  const resultScan = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+    .analyze();
+  expect(resultScan.violations).toEqual([]);
   await page.screenshot({
     path: ".local/screenshots/chat-synthetic-mobile.png",
     fullPage: true,
