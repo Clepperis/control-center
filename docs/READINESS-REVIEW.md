@@ -197,7 +197,7 @@ the public repository's branch state and one successful CI run.
 | ----------------------- | ----------------------------------------------------------- |
 | `npm run lint`          | pass                                                        |
 | `npm run typecheck`     | pass                                                        |
-| `npm test`              | pass, 113 tests in 13 files (107 baseline + 6 new)          |
+| `npm test`              | pass, 114 tests in 14 files (107 baseline + 7 new)          |
 | `npm run format:check`  | pass                                                        |
 | `npm run build`         | pass                                                        |
 | `npm run test:boundary` | pass                                                        |
@@ -206,8 +206,24 @@ the public repository's branch state and one successful CI run.
 | `npm run test:a11y`     | pass: 8 demo routes at 1440/1024/390 px, AA scans, keyboard |
 
 The browser suites are automated checks, not a screen-reader audit or a manual
-visual review of every state. Remote CI does not run on `claude/*` branches, so
-these results are local only.
+visual review of every state.
+
+## Integration into main
+
+- **Why review commits had no CI.** The workflow's `push` trigger covers only
+  `codex/**` branches, and no pull request existed. Its `pull_request` trigger
+  has no branch filter, so a pull request into `main` runs it. CI was not
+  broken.
+- **CI now runs the formatting check and the production boundary check.**
+  Previously it skipped both, and the boundary check is the only test of the
+  production authentication path and the security headers. Existing step names
+  are unchanged because Improve System evidence reads them.
+- **Improve System default target is now `main`.** It pointed at
+  `codex/phase-5-platform-engineer` only because `main` lacked the application.
+  The repository and target are now defined once, so the setup shown to the
+  owner always matches the branch the service reads. Test:
+  `tests/improvement-config.test.ts`. Existing `.env.local` files that set the
+  old branch explicitly keep it until the owner changes them.
 
 ## Next actions for the owner
 

@@ -8,13 +8,11 @@ import {
   PaperclipCodingExecutor,
 } from "../src/server/improvements/executor";
 import { configurationFingerprint } from "../src/server/improvements/safety";
+import { improvementTarget } from "../src/server/improvements/configured";
 // Read-only. Never invokes a model, creates a task, changes external settings,
 // enables execution, creates credentials, or touches the owner's working tree.
 let failed = false;
-const repository =
-    process.env.IMPROVEMENT_REPOSITORY ?? "Clepperis/control-center",
-  target =
-    process.env.IMPROVEMENT_TARGET_BRANCH ?? "codex/phase-5-platform-engineer";
+const { repository, target } = improvementTarget();
 try {
   const repo = new GithubRepository(
     repository,

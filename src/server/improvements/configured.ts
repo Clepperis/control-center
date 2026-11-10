@@ -14,13 +14,23 @@ import {
 import { ImprovementService } from "./service";
 import type { KnowledgeService } from "../knowledge/service";
 
+// One source for the repository boundary, so the setup shown to the owner is
+// always the one the service actually reads from and integrates into.
+export function improvementTarget() {
+  return {
+    repository:
+      process.env.IMPROVEMENT_REPOSITORY ?? "Clepperis/control-center",
+    target: process.env.IMPROVEMENT_TARGET_BRANCH ?? "main",
+  };
+}
 export function configuredImprovements(
   db: Database,
   knowledge: KnowledgeService | null = null,
 ) {
+  const { repository, target } = improvementTarget();
   const repo = new GithubRepository(
-    process.env.IMPROVEMENT_REPOSITORY ?? "Clepperis/control-center",
-    process.env.IMPROVEMENT_TARGET_BRANCH ?? "codex/phase-5-platform-engineer",
+    repository,
+    target,
     process.env.IMPROVEMENT_GITHUB_READ_TOKEN ?? "",
   );
   let planner: PlatformPlanner = unavailablePlanner,
@@ -40,11 +50,7 @@ export function configuredImprovements(
 }
 export function improvementSetup() {
   return {
-    repository:
-      process.env.IMPROVEMENT_REPOSITORY ?? "Clepperis/control-center",
-    target:
-      process.env.IMPROVEMENT_TARGET_BRANCH ??
-      "codex/phase-5-platform-engineer",
+    ...improvementTarget(),
     executorEnabled: process.env.IMPROVEMENT_EXECUTOR_ENABLED === "true",
     blockers: [
       ...(process.env.IMPROVEMENT_EXECUTOR_ENABLED !== "true"

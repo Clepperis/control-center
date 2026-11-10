@@ -29,12 +29,18 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Lint
         run: npm run lint
+      - name: Formatting
+        run: npm run format:check
       - name: Types
         run: npm run typecheck
       - name: Tests
         run: npm test
       - name: Build
         run: npm run build
+      # The built artifact must refuse development access and send security
+      # headers. This is the only check of the production authentication path.
+      - name: Production boundary
+        run: npm run test:boundary
       - name: Browser dependencies
         run: npx playwright install --with-deps chromium
       - name: Desktop and mobile

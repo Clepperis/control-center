@@ -59,7 +59,7 @@ an external workspace ID. Unknown shapes fail closed.
    context already read; the owner may write a bounded plan after investigation.
 3. Set the allowed GitHub repository and actual integration target in
    `IMPROVEMENT_REPOSITORY` / `IMPROVEMENT_TARGET_BRANCH`. The default target is
-   the Phase 5 branch, because `main` lacks the earlier work. GitHub reads use
+   `main`, the integration branch for the complete application. GitHub reads use
    fixed official API origins. An optional repository-scoped Contents/Actions
    **read** token avoids low anonymous rate limits. See the official
    [contents](https://docs.github.com/en/rest/repos/contents) and
