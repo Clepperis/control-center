@@ -13,6 +13,7 @@ import {
 } from "./executor";
 import { ImprovementService } from "./service";
 import type { KnowledgeService } from "../knowledge/service";
+import { DatabaseUsageSink } from "../observability/usage";
 
 export function configuredImprovements(
   db: Database,
@@ -26,7 +27,11 @@ export function configuredImprovements(
   let planner: PlatformPlanner = unavailablePlanner,
     executor: CodingExecutor = unavailableExecutor;
   try {
-    planner = new NexosPlatformPlanner(gatewayConfig(process.env));
+    planner = new NexosPlatformPlanner(
+      gatewayConfig(process.env),
+      fetch,
+      new DatabaseUsageSink(db),
+    );
   } catch {}
   try {
     executor = new PaperclipCodingExecutor(

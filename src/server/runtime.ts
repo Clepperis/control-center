@@ -19,6 +19,7 @@ import { configuredAutomations } from "./automations/configured";
 import { KnowledgeService } from "./knowledge/service";
 import { MarkdownFiles } from "./knowledge/files";
 import { configuredImprovements } from "./improvements/configured";
+import { DatabaseUsageSink, logOnlyUsageSink } from "./observability/usage";
 const globalDb = globalThis as typeof globalThis & {
   controlCenterDb?: Database;
 };
@@ -28,7 +29,7 @@ export function getStore() {
   globalDb.controlCenterDb ??= openPostgres(process.env.DATABASE_URL);
   return new Store(globalDb.controlCenterDb);
 }
-export function configuredAdapters() {
+export function configuredAdapters(db?: Database) {
   let gateway: PlanningGateway = {
     async complete() {
       throw new IntegrationError("configuration");
@@ -45,7 +46,11 @@ export function configuredAdapters() {
     taskUrl: () => "",
   };
   try {
-    gateway = new NexosGateway(gatewayConfig(process.env));
+    gateway = new NexosGateway(
+      gatewayConfig(process.env),
+      fetch,
+      db ? new DatabaseUsageSink(db) : logOnlyUsageSink,
+    );
   } catch {
     /* Unavailable is an explicit state, not a fallback provider. */
   }
@@ -57,9 +62,10 @@ export function configuredAdapters() {
   return { gateway, paperclip };
 }
 export function getService() {
-  const adapters = configuredAdapters();
+  const store = getStore();
+  const adapters = configuredAdapters(store.db);
   return new OrchestrationService(
-    getStore(),
+    store,
     adapters.gateway,
     adapters.paperclip,
     process.env.LIVE_DELEGATION_ENABLED === "true",

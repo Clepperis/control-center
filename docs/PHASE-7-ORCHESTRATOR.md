@@ -103,6 +103,13 @@ Each slice is a separate branch/PR with tests; live switches stay off.
 
 1. **Structured logs + usage/cost recording.** Migration for usage rows; logger
    module; gateway records tokens/cost. No new external capability.
+   _Implemented on `claude/phase-7-usage-logging`:_ `src/server/observability`
+   (`log.ts` JSON lines with key redaction and control-character stripping;
+   `usage.ts` `trackModelCall` + `DatabaseUsageSink`), migration
+   `007_model_usage.sql`, and recording in the chat/knowledge gateway and the
+   Platform Engineer planner, including failed calls and tokens spent on replies
+   that later fail validation. Verified with deterministic substitutes only
+   (fake fetchers, PGlite); no real nexos call has been recorded yet.
 2. **Model routing table.** Config schema, catalog check, tier selection,
    fallback, owner override, confirmation for strong tier/cost ceiling.
 3. **Route card UI.** Unify existing reply kinds into one card in the chat page,
