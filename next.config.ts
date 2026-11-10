@@ -7,7 +7,7 @@ const config: NextConfig = {
       : ".next",
   output: "standalone",
   poweredByHeader: false,
-  serverExternalPackages: ["pg"],
+  serverExternalPackages: ["pg", "better-auth", "@node-rs/argon2"],
   // Local secrets/research/test data never belong in a standalone artifact.
   outputFileTracingExcludes: {
     "/*": [

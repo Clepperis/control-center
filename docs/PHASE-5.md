@@ -268,7 +268,8 @@ does not satisfy this demonstration.
 
 ## Phase 6 prerequisites
 
-First complete the separately approved real isolated coding example and validate
+The real isolated coding example remains a separate acceptance gate; independent
+Phase 6 authentication and deployment preparation can proceed without it. Validate
 application PostgreSQL, the installed Paperclip workspace/cancellation contract,
 runtime authentication, hard limits and CI provenance. Then prepare the Phase 6
 deployment design: chosen target runtime/ARM64 verification, production IdP/proxy,

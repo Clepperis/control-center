@@ -1,7 +1,7 @@
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from "jose";
 export interface OwnerSession {
   subject: string;
-  mode: "development" | "oidc";
+  mode: "development" | "oidc" | "password";
 }
 export type Env = Record<string, string | undefined>;
 const keySets = new Map<string, ReturnType<typeof createRemoteJWKSet>>();

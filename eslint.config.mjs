@@ -8,6 +8,7 @@ export default defineConfig([
     ".next/**",
     ".local/**",
     ".data/**",
+    "dist/**",
     "coverage/**",
     "test-results/**",
     "playwright-report/**",

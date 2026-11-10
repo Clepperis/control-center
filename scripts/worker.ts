@@ -66,6 +66,10 @@ try {
       await automations.tick();
       if (knowledge) await knowledge.tick();
       await improvements.reconcileTick();
+      await db.query(
+        "INSERT INTO worker_heartbeat(singleton,completed_at,release) VALUES(true,now(),$1) ON CONFLICT(singleton) DO UPDATE SET completed_at=now(),release=EXCLUDED.release",
+        [process.env.RELEASE_COMMIT ?? "development"],
+      );
     } catch {
       console.error(
         JSON.stringify({

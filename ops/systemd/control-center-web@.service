@@ -1,0 +1,41 @@
+[Unit]
+Description=Control Center web release %i
+After=network.target postgresql.service
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=control-center
+Group=control-center
+WorkingDirectory=/opt/control-center/releases/%i
+EnvironmentFile=/etc/control-center/releases/%i/web.env
+Environment=NODE_ENV=production
+Environment=HOSTNAME=127.0.0.1
+Environment=PORT=3210
+Environment=RELEASE_COMMIT=%i
+ExecStart=/opt/control-center/releases/%i/bin/node server.js
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=60
+KillSignal=SIGTERM
+KillMode=mixed
+CPUQuota=75%
+MemoryHigh=640M
+MemoryMax=768M
+TasksMax=96
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/control-center/knowledge /var/cache/control-center
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+StandardOutput=journal
+StandardError=journal
+LogNamespace=control-center
+LogRateLimitIntervalSec=30
+LogRateLimitBurst=100
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,39 @@
+[Unit]
+Description=Control Center worker release %i
+After=network.target postgresql.service
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=control-center
+Group=control-center
+WorkingDirectory=/opt/control-center/releases/%i
+EnvironmentFile=/etc/control-center/releases/%i/worker.env
+Environment=NODE_ENV=production
+Environment=RELEASE_COMMIT=%i
+ExecStart=/opt/control-center/releases/%i/bin/node dist/worker.mjs
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=180
+KillSignal=SIGTERM
+KillMode=mixed
+CPUQuota=50%
+MemoryHigh=384M
+MemoryMax=512M
+TasksMax=64
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/control-center/knowledge
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+StandardOutput=journal
+StandardError=journal
+LogNamespace=control-center
+LogRateLimitIntervalSec=30
+LogRateLimitBurst=100
+
+[Install]
+WantedBy=multi-user.target

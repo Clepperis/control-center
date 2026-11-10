@@ -50,7 +50,7 @@ Browser tests default to installed Chrome. Set `BROWSER_CHANNEL=chromium` after 
 
 The interface uses a compact Linear-inspired dark workspace, with locally bundled Inter, neutral surfaces and grouped work lists. See [design decisions and reference use](docs/DESIGN.md). `npm run test:a11y` checks all pages at 1440/1024/390px, AA rules and keyboard behavior against the running demo server.
 
-Production requires a trusted OIDC login/session proxy plus independent signed-JWT owner verification. A production build alone is not deployment readiness. No deployment or remote infrastructure changes are included.
+Phase 6 adds single-owner password authentication through Better Auth, operator-only bootstrap/recovery, and native ARM64 release, migration, systemd, backup and rollback tooling. Read [Phase 6 operations and approval gates](docs/PHASE-6.md). The selected production mode is `AUTH_MODE=password` with HTTPS and database sessions; explicitly selected legacy OIDC remains supported. A build is not deployment readiness. No production deployment, DNS change or Drive authorization/upload has been performed.
 
 For n8n, follow [Phase 3 configuration and the explicit live-test gate](docs/PHASE-3.md). It uses a separate application MCP token and migration 003. Keep `N8N_EXECUTION_ENABLED=false` until the exact live test is approved. The dedicated example remains an unpublished draft; existing business workflows are never executable automatically.
 

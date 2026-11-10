@@ -27,9 +27,11 @@ The private local audit is research and decision history, not an installation sp
 
 `AUTH_MODE=development` grants a clearly labeled local owner only with `NODE_ENV=development` or `test`. The documented dev server binds to loopback. Production never falls back to this mode.
 
-The intended production setup is a trusted OIDC login proxy in front of the application, with HTTPS and direct backend access blocked. The proxy handles the browser session, login and recovery and replaces any incoming Authorization header with the owner's signed JWT access token. The application independently verifies signature, algorithm, issuer, audience, expiry, issued-at and exact `OWNER_SUBJECT` using `jose` and the configured HTTPS JWKS URL. Ordinary identity headers are not trusted. Opaque access tokens are unsupported. Each server page and API operation must call the owner guard before reading data. Configuration alone does not verify a production installation; test the chosen IdP and proxy before deployment.
+The selected Phase 6 production path is `AUTH_MODE=password`: Better Auth verifies the owner password and signed session cookie, and reads the PostgreSQL session on every guarded request. An operator creates the sole account; a database singleton constraint prevents another. The stable user ID must equal the explicitly configured `OWNER_SUBJECT`. Ordinary identity/proxy headers do not authenticate ownership. Each server page and API operation calls the owner guard before data access. Cookie caching is disabled, sessions have a fixed 12-hour lifetime, logout deletes the session, and operator reset revokes all sessions. See [authentication and deployment details](PHASE-6.md).
 
-The Phase 1 UI does not have production authentication configuration or a login screen. It fails closed with setup guidance. There is no public registration, custom password storage or multi-tenant model.
+Explicit legacy `AUTH_MODE=oidc` retains independent `jose` verification of signature/algorithm/issuer/audience/required claims/expiry/exact owner. It is never a password-mode fallback. Production artifacts deny development access even with runtime NODE_ENV=test. There is no public registration or automatic transfer of `development-owner` records.
+
+The reviewed deployment design puts web, the existing worker, dedicated PostgreSQL, authoritative private Markdown/history and backup scratch on Oracle. n8n/Paperclip and their databases stay on Hostinger behind supported HTTPS APIs. Native immutable Linux ARM64 releases use systemd; no additional agent platform, queue, scheduler or deployment API is introduced. The existing Oracle workloads remain independent.
 
 ## Self-hosting
 

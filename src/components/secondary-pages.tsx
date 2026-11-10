@@ -383,13 +383,17 @@ export function Settings({
             <h3 className="font-semibold">
               {authMode === "development"
                 ? "Aiškiai įjungtas kūrimo režimas"
-                : "OIDC savininko patikra"}
+                : authMode === "password"
+                  ? "Slaptažodžio ir savininko sesijos patikra"
+                  : "OIDC savininko patikra"}
             </h3>
           </div>
           <p className="muted text-sm">
             {authMode === "development"
               ? "Prisijungimas apeinamas tik vietinio kūrimo metu. Produkcijos aplinkoje ši nuostata prieigos nesuteikia."
-              : "Kiekviena serverio užklausa tikrina pasirašytą prieigos žetoną ir vienintelio savininko tapatybę."}
+              : authMode === "password"
+                ? "Kiekviena serverio užklausa tikrina galiojančią savininko sesiją duomenų bazėje. Slaptažodį atkuria serverio operatorius."
+                : "Kiekviena serverio užklausa tikrina pasirašytą prieigos žetoną ir vienintelio savininko tapatybę."}
           </p>
         </div>
       </section>

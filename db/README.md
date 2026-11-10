@@ -20,6 +20,20 @@ Private Markdown/history and operational PostgreSQL need separate backups.
 
 Migrations require a separate application database and a controlled local migration step. Do not put database credentials on a command line or run migrations against remote services during development.
 
+`006_owner_auth.sql` adds Better Auth's single-owner account/session tables,
+the atomic global login budget and worker heartbeat. It does not change existing
+owner subjects, approvals or operational records. It is additive: Phase 5's
+operational SQL can still read its existing tables, but Phase 5 has no password
+login. An application rollback to Phase 5 is therefore not an acceptable public
+authentication rollback without a separately verified legacy boundary.
+
+`scripts/migrate.ts --check` compares every migration checksum and refuses pending,
+modified or newer histories without writing schema. Applying production SQL
+requires `MIGRATION_DATABASE_URL` and an explicit operator invocation; neither
+web nor worker runs migrations at startup. Review `ops/postgres/roles.sql` after
+migration: runtime cannot create accounts or change credentials, and worker has
+no auth-table permissions. Future grants require review with each migration.
+
 `005_improvements.sql` adds owner-scoped private change requests, versioned JSON
 state/consent/evidence, durable leased jobs with a single active step per request,
 and deduplicated sanitized error-signal groups. It does not create a second task

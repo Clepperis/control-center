@@ -1,7 +1,7 @@
 name: Platform validation
 on:
   push:
-    branches: ['codex/**']
+    branches: ["codex/**"]
   pull_request:
 permissions:
   contents: read
@@ -13,17 +13,17 @@ jobs:
       AUTH_MODE: development
       DATA_MODE: demo
       APP_ORIGIN: http://127.0.0.1:3000
-      LIVE_MODEL_ENABLED: 'false'
-      LIVE_DELEGATION_ENABLED: 'false'
-      IMPROVEMENT_EXECUTOR_ENABLED: 'false'
+      LIVE_MODEL_ENABLED: "false"
+      LIVE_DELEGATION_ENABLED: "false"
+      IMPROVEMENT_EXECUTOR_ENABLED: "false"
       BROWSER_CHANNEL: chromium
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: 24
+          node-version: 24.22.2
           cache: npm
       - name: Dependencies without lifecycle hooks
         run: npm ci --ignore-scripts
@@ -37,11 +37,103 @@ jobs:
         run: npm run build
       - name: Browser dependencies
         run: npx playwright install --with-deps chromium
+      - name: Production authentication boundary
+        run: npm run test:boundary
+      - name: Production password HTTPS desktop and mobile
+        run: npm run test:password:ui
       - name: Desktop and mobile
         run: npm run test:ui:live
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: synthetic-browser-captures
           path: .local/screenshots/*.png
           retention-days: 7
+  arm64-release:
+    # Public repository, free standard native ARM64 runner. Never deploys.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18.6@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic-ci-only
+          POSTGRES_DB: cc_phase6_fixture
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      AUTH_MODE: development
+      DATA_MODE: demo
+      APP_ORIGIN: http://127.0.0.1:3000
+      LIVE_MODEL_ENABLED: "false"
+      LIVE_DELEGATION_ENABLED: "false"
+      N8N_EXECUTION_ENABLED: "false"
+      IMPROVEMENT_EXECUTOR_ENABLED: "false"
+      TEST_DATABASE_URL: postgresql://postgres:synthetic-ci-only@127.0.0.1:5432/cc_phase6_fixture
+      RESTORE_DATABASE_URL: postgresql://postgres:synthetic-ci-only@127.0.0.1:5432/postgres
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.22.2
+          cache: npm
+      - name: Native dependencies and authentication tests
+        run: |
+          test "$(uname -m)" = aarch64
+          npm ci --ignore-scripts
+          npx vitest run tests/password-auth.test.ts tests/deployment.test.ts
+      - name: Build exact source and immutable native payload
+        run: |
+          npm run build
+          npm run build:runtime
+          npm run build:release
+          echo "ARTIFACT_RUNTIME=$GITHUB_WORKSPACE/.local/releases/$GITHUB_SHA/runtime" >> "$GITHUB_ENV"
+      - name: Native PostgreSQL fixture and artifact execution
+        run: |
+          npx tsx scripts/prepare-native-fixture.ts
+          node scripts/verify-native-artifact.mjs
+      - name: Pinned rclone and PostgreSQL client
+        run: |
+          curl --fail --silent --show-error --location https://downloads.rclone.org/v1.76.0/rclone-v1.76.0-linux-arm64.zip --output /tmp/cc-rclone.zip
+          echo 'ee169016675e23a69d77240565133ff7dbc9b33d16fa8f7053d4af39f1eaeb78  /tmp/cc-rclone.zip' | sha256sum --check
+          unzip -q /tmp/cc-rclone.zip -d /tmp/cc-rclone
+          sudo install /tmp/cc-rclone/rclone-v1.76.0-linux-arm64/rclone /usr/local/bin/rclone
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error https://www.postgresql.org/media/keys/ACCC4CF8.asc --output /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          gpg --show-keys --with-colons /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc | grep -q B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8
+          echo 'deb [arch=arm64 signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main' | sudo tee /etc/apt/sources.list.d/cc-pgdg.list >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client-18
+          echo '/usr/lib/postgresql/18/bin' >> "$GITHUB_PATH"
+      - name: Actual dump, local encryption, decryption and isolated restore
+        run: |
+          umask 077
+          cat > /tmp/cc-pg-service.conf <<'EOF'
+          [cc-backup]
+          host=127.0.0.1
+          port=5432
+          dbname=cc_phase6_fixture
+          user=postgres
+          [cc-restore]
+          host=127.0.0.1
+          port=5432
+          dbname=postgres
+          user=postgres
+          EOF
+          echo '127.0.0.1:5432:*:postgres:synthetic-ci-only' > /tmp/cc-pgpass
+          PGSERVICEFILE=/tmp/cc-pg-service.conf PGPASSFILE=/tmp/cc-pgpass BACKUP_TEST_POSTGRES=true BACKUP_FIXTURE_JSON="$GITHUB_WORKSPACE/.local/phase-6/native-fixture.json" npm run test:backup
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: control-center-linux-arm64-${{ github.sha }}
+          path: |
+            .local/releases/${{ github.sha }}/*.tar.gz
+            .local/releases/${{ github.sha }}/artifact.json
+            .local/phase-6/native-artifact.json
+            .local/phase-6/backup-test.json
+          retention-days: 7
+          if-no-files-found: error

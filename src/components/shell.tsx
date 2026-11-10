@@ -19,6 +19,7 @@ import {
 } from "@phosphor-icons/react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { createContext, useContext, useState, type ReactNode } from "react";
+import { PasswordLogout } from "./password-login";
 
 const WorkspaceMode = createContext<"demo" | "live" | null>(null);
 
@@ -99,6 +100,7 @@ export function Shell({
             {children}
           </main>
           <footer className="page-footer">
+            {authMode === "password" && <PasswordLogout />}
             <span>
               {authMode === "development"
                 ? "Be prisijungimo · tik vietiniam kūrimui"
