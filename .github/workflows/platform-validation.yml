@@ -53,17 +53,6 @@ jobs:
     # Public repository, free standard native ARM64 runner. Never deploys.
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 30
-    services:
-      postgres:
-        image: postgres:18.6@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: synthetic-ci-only
-          POSTGRES_DB: cc_phase6_fixture
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U postgres" --health-interval 5s
-          --health-timeout 5s --health-retries 10
     env:
       AUTH_MODE: development
       DATA_MODE: demo
@@ -72,8 +61,8 @@ jobs:
       LIVE_DELEGATION_ENABLED: "false"
       N8N_EXECUTION_ENABLED: "false"
       IMPROVEMENT_EXECUTOR_ENABLED: "false"
-      TEST_DATABASE_URL: postgresql://postgres:synthetic-ci-only@127.0.0.1:5432/cc_phase6_fixture
-      RESTORE_DATABASE_URL: postgresql://postgres:synthetic-ci-only@127.0.0.1:5432/postgres
+      TEST_DATABASE_URL: postgresql://postgres:synthetic-ci-only@127.0.0.1:55432/cc_phase6_fixture
+      RESTORE_DATABASE_URL: postgresql://postgres:synthetic-ci-only@127.0.0.1:55432/postgres
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -95,6 +84,18 @@ jobs:
           echo "ARTIFACT_RUNTIME=$GITHUB_WORKSPACE/.local/releases/$GITHUB_SHA/runtime" >> "$GITHUB_ENV"
       - name: Native PostgreSQL fixture and artifact execution
         run: |
+          # Host networking preserves PostgreSQL's observed loopback address;
+          # the production restore guard continues to reject non-loopback DBs.
+          docker run --detach --name cc-phase6-postgres --network host \
+            --env POSTGRES_USER=postgres --env POSTGRES_PASSWORD=synthetic-ci-only \
+            --env POSTGRES_DB=cc_phase6_fixture \
+            postgres:18.6@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42 \
+            -c listen_addresses=127.0.0.1 -c port=55432
+          for attempt in $(seq 1 30); do
+            if docker exec cc-phase6-postgres pg_isready -U postgres -p 55432; then break; fi
+            test "$attempt" -lt 30
+            sleep 1
+          done
           npx tsx scripts/prepare-native-fixture.ts
           node scripts/verify-native-artifact.mjs
       - name: Pinned rclone and PostgreSQL client
@@ -116,16 +117,16 @@ jobs:
           cat > /tmp/cc-pg-service.conf <<'EOF'
           [cc-backup]
           host=127.0.0.1
-          port=5432
+          port=55432
           dbname=cc_phase6_fixture
           user=postgres
           [cc-restore]
           host=127.0.0.1
-          port=5432
+          port=55432
           dbname=postgres
           user=postgres
           EOF
-          echo '127.0.0.1:5432:*:postgres:synthetic-ci-only' > /tmp/cc-pgpass
+          echo '127.0.0.1:55432:*:postgres:synthetic-ci-only' > /tmp/cc-pgpass
           PGSERVICEFILE=/tmp/cc-pg-service.conf PGPASSFILE=/tmp/cc-pgpass BACKUP_TEST_POSTGRES=true BACKUP_FIXTURE_JSON="$GITHUB_WORKSPACE/.local/phase-6/native-fixture.json" npm run test:backup
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -137,3 +138,6 @@ jobs:
             .local/phase-6/backup-test.json
           retention-days: 7
           if-no-files-found: error
+      - name: Remove isolated PostgreSQL fixture
+        if: always()
+        run: docker rm --force cc-phase6-postgres 2>/dev/null || true

@@ -72,6 +72,9 @@ account/password/schema-write denial, run each process with its respective role
 and check PostgreSQL's real reset/login advisory lock. The first native packaging
 run correctly rejected an escaping link caused by Node's default copy behavior;
 release copies now preserve relative links and still reject escaping targets.
+The PostgreSQL test fixture binds an isolated native container to loopback using
+host networking; bridge NAT does not weaken the production restore guard's
+requirement that the observed database endpoint is local.
 
 The final pushed commit's CI outcome and downloadable artifact identity must be
 checked separately. Do not infer a successful native run merely from this workflow
