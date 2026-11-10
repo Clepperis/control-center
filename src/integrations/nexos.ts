@@ -18,6 +18,7 @@ import {
   chooseModel,
   type ModelChoice,
   type ModelTask,
+  type ModelTier,
 } from "@/server/models/routing";
 export interface GatewayResult {
   reply: ModelReply;
@@ -32,7 +33,12 @@ export interface PlanningGateway {
     signal?: AbortSignal,
     automations?: AutomationContract[],
     grounding?: Grounding,
+    options?: CompletionOptions,
   ): Promise<GatewayResult>;
+}
+export interface CompletionOptions {
+  /** Owner-selected tier for this turn; absent means automatic routing. */
+  tier?: ModelTier | null;
 }
 export const usageSchema = z
   .object({
@@ -86,13 +92,18 @@ export class NexosGateway implements PlanningGateway {
       throw new IntegrationError("configuration");
   }
   /** Picks the tier model for a task from the live catalog; never upgrades. */
-  async resolve(task: ModelTask, signal?: AbortSignal): Promise<ModelChoice> {
+  async resolve(
+    task: ModelTask,
+    signal?: AbortSignal,
+    ownerTier?: ModelTier | null,
+  ): Promise<ModelChoice> {
     const ids = await this.catalog(signal);
     const choice = chooseModel(
       this.config.model,
       this.config.routes ?? {},
       task,
       (id) => ids.has(id),
+      ownerTier,
     );
     if (!choice) throw new IntegrationError("configuration");
     return choice;
@@ -114,6 +125,7 @@ export class NexosGateway implements PlanningGateway {
     signal?: AbortSignal,
     automations: AutomationContract[] = [],
     grounding?: Grounding,
+    options: CompletionOptions = {},
   ): Promise<GatewayResult> {
     if (!this.config.enabled) throw new IntegrationError("disabled");
     if (
@@ -122,7 +134,11 @@ export class NexosGateway implements PlanningGateway {
       messages.some((m) => m.content.length > 10000)
     )
       throw new IntegrationError("malformed");
-    const route = await this.resolve(grounding ? "knowledge" : "chat", signal);
+    const route = await this.resolve(
+      grounding ? "knowledge" : "chat",
+      signal,
+      options.tier,
+    );
     const eligible = agents.filter((a) => a.eligible);
     const system = [
       "You are a single-owner personal control center. Reply in natural Lithuanian.",

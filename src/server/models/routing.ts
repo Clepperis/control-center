@@ -9,7 +9,11 @@ export interface ModelChoice {
   requestedTier: ModelTier;
   model: string;
   fallback: boolean;
+  /** True when the owner picked the tier for this turn. */
+  override: boolean;
 }
+
+export const MODEL_TIERS: readonly ModelTier[] = ["fast", "standard", "strong"];
 
 export const TASK_TIER: Readonly<Record<ModelTask, ModelTier>> = {
   chat: "fast",
@@ -18,15 +22,17 @@ export const TASK_TIER: Readonly<Record<ModelTask, ModelTier>> = {
 };
 
 /** Cheapest first. Fallback may only move left from the requested tier. */
-const TIER_ORDER: readonly ModelTier[] = ["fast", "standard", "strong"];
+const TIER_ORDER = MODEL_TIERS;
 
 export function chooseModel(
   defaultModel: string,
   routes: ModelRoutes,
   task: ModelTask,
   available: (model: string) => boolean,
+  ownerTier?: ModelTier | null,
 ): ModelChoice | null {
-  const requestedTier = TASK_TIER[task];
+  const override = !!ownerTier;
+  const requestedTier = ownerTier ?? TASK_TIER[task];
   const rejected = new Set<string>();
   for (let i = TIER_ORDER.indexOf(requestedTier); i >= 0; i--) {
     const tier = TIER_ORDER[i];
@@ -39,6 +45,7 @@ export function chooseModel(
         requestedTier,
         model,
         fallback: tier !== requestedTier,
+        override,
       };
     rejected.add(model);
   }

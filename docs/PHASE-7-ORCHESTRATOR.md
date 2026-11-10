@@ -124,6 +124,15 @@ Each slice is a separate branch/PR with tests; live switches stay off.
    Deterministic substitutes only; no real catalog read with application keys.
 3. **Route card UI.** Unify existing reply kinds into one card in the chat page,
    preserving the owner's composer/layout changes. Desktop/mobile/a11y checks.
+   _Implemented on `claude/phase-7-route-card`:_ each assistant reply shows a
+   route summary (Kas / Modelis / Kaina) built from persisted `replyKind`,
+   model, tier, fallback and override; a per-message tier picker in the
+   composer (automatic / greitas / standartinis / stiprus) is validated by the
+   chat API and passed to routing, which still falls back only to cheaper
+   tiers. Choosing the strong tier is the owner's explicit confirmation. **Not
+   done:** a monetary cost ceiling — nexos prices are not available to the
+   application, so only provider-reported tokens/credits after the call are
+   shown. Existing plan/automation/memory confirmation cards are unchanged.
 4. **Statistika page.** Read-only aggregation over slice 1 data.
 5. **Paperclip task-level proposals.** Goal/budget/target fields, status and
    approval display. Requires verified application credentials first.
