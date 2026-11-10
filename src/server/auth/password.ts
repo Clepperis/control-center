@@ -5,7 +5,7 @@ import { z } from "zod";
 import { AccessError, type Env } from "./policy";
 
 export const AUTH_LOCK = 718236;
-export const passwordSchema = z.string().min(15).max(1024);
+export const passwordSchema = z.string().min(10).max(1024);
 export const hashOwnerPassword = (password: string) =>
   hash(passwordSchema.parse(password), {
     algorithm: 2, // Argon2id (the binding exports an ambient const enum).
@@ -60,7 +60,7 @@ export function createPasswordAuth(env: Env, pool: pg.Pool) {
     emailAndPassword: {
       enabled: true,
       disableSignUp: true,
-      minPasswordLength: 15,
+      minPasswordLength: 10,
       maxPasswordLength: 1024,
       password: {
         hash: hashOwnerPassword,

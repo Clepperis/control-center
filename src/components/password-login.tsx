@@ -51,6 +51,7 @@ export function PasswordLogin({ destination }: { destination: string }) {
           name="password"
           type="password"
           autoComplete="current-password"
+          minLength={10}
           maxLength={1024}
           required
         />

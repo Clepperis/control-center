@@ -18,6 +18,70 @@ import { safeDestination } from "../src/server/auth/password-http";
 import { Store } from "../src/server/orchestration/store";
 
 describe("single-owner password boundary (real library + pg wire + SQL engine)", () => {
+  it("accepts exactly ten characters for bootstrap, login and reset; rejects nine", async () => {
+    const f = await passwordFixture();
+    try {
+      await expect(
+        setOwnerPassword(
+          f.db,
+          f.env,
+          "bootstrap",
+          "owner@example.com",
+          "123456789",
+        ),
+      ).rejects.toThrow();
+      await setOwnerPassword(
+        f.db,
+        f.env,
+        "bootstrap",
+        "owner@example.com",
+        "TestOnly10",
+      );
+      expect(
+        (
+          await f.call("sign-in/email", {
+            email: "owner@example.com",
+            password: "123456789",
+          })
+        ).status,
+      ).toBe(400);
+      expect(
+        (
+          await f.call("sign-in/email", {
+            email: "owner@example.com",
+            password: "TestOnly10",
+          })
+        ).status,
+      ).toBe(200);
+      await expect(
+        setOwnerPassword(
+          f.db,
+          f.env,
+          "reset",
+          "owner@example.com",
+          "123456789",
+        ),
+      ).rejects.toThrow();
+      await setOwnerPassword(
+        f.db,
+        f.env,
+        "reset",
+        "owner@example.com",
+        "ResetNew10",
+      );
+      expect(
+        (
+          await f.call("sign-in/email", {
+            email: "owner@example.com",
+            password: "ResetNew10",
+          })
+        ).status,
+      ).toBe(200);
+    } finally {
+      await f.close();
+    }
+  });
+
   it("operator bootstraps once; functional salted Argon2id, login, logout, expiry and revocation", async () => {
     const f = await passwordFixture();
     try {

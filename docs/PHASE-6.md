@@ -65,7 +65,7 @@ the [OWASP minimum](https://cheatsheetseries.owasp.org/cheatsheets/Password_Stor
 The package publishes Linux ARM64 glibc/musl bindings. Local Windows verification
 is not Oracle runtime validation; the native CI job tests the actual binding on
 ARM64, and an approved Oracle run must still establish target behavior. There is
-one hashing path and no automatic weaker fallback. Passphrases are 15–1024
+one hashing path and no automatic weaker fallback. Passphrases are 10–1024
 characters; paste, Unicode and password-manager autocomplete are supported.
 
 The PostgreSQL singleton constraint permits exactly one configured account after

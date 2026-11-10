@@ -1,12 +1,17 @@
 import { z } from "zod";
 import type pg from "pg";
-import { AUTH_LOCK, passwordConfig, type PasswordAuth } from "./password";
+import {
+  AUTH_LOCK,
+  passwordConfig,
+  passwordSchema,
+  type PasswordAuth,
+} from "./password";
 import { AccessError, type Env } from "./policy";
 
 const login = z
   .object({
     email: z.email().max(254),
-    password: z.string().min(15).max(1024),
+    password: passwordSchema,
     callbackURL: z.string().optional(),
   })
   .strict();

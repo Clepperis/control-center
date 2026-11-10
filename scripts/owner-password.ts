@@ -56,7 +56,7 @@ try {
   const email = await rl.question("Owner login email (no delivery service): ");
   rl.close();
   const password = await hidden(
-    "New passphrase (15–1024 characters, hidden): ",
+    "New passphrase (10–1024 characters, hidden): ",
   );
   const confirmation = await hidden("Repeat passphrase (hidden): ");
   if (password !== confirmation) throw new Error("Passphrases differ.");
