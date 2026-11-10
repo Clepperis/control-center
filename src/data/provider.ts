@@ -13,8 +13,38 @@ import {
   type AutomationRun,
   type AutomationCatalog,
 } from "@/domain/automations";
-import { toRun } from "@/server/orchestration/store";
+import { DomainError, toRun } from "@/server/orchestration/store";
 import { isStale } from "@/domain/orchestration";
+import { knowledgeErrors } from "@/domain/knowledge";
+import { MarkdownFiles } from "@/server/knowledge/files";
+import type { ConnectionState } from "@/domain/models";
+
+// A real filesystem check of the private volume, not a configured-value guess.
+export async function knowledgeConnection(
+  root: string | undefined,
+): Promise<ConnectionState> {
+  if (!root)
+    return {
+      kind: "disconnected",
+      detail: "Privatus žinių katalogas dar neprijungtas.",
+    };
+  try {
+    await new MarkdownFiles(root).ready();
+    return {
+      kind: "verified",
+      checkedAt: new Date().toISOString(),
+      detail:
+        "Privatus katalogas pasiekiamas. Indeksavimo būsena matoma skiltyje „Žinios“.",
+    };
+  } catch (e) {
+    return {
+      kind: "unavailable",
+      detail:
+        (e instanceof DomainError && knowledgeErrors[e.code]) ||
+        "Privatus žinių katalogas nepasiekiamas.",
+    };
+  }
+}
 
 export interface DashboardRepository {
   getDashboard(): Promise<Dashboard>;
@@ -140,10 +170,7 @@ export async function getLiveWorkspace() {
       id: "knowledge",
       name: "Markdown",
       purpose: "Patvirtintos žinios",
-      state: {
-        kind: "disconnected",
-        detail: "Privatus žinių katalogas dar neprijungtas.",
-      },
+      state: await knowledgeConnection(process.env.KNOWLEDGE_ROOT),
     },
   );
   const n8n = data.connections.find((c) => c.id === "n8n")!;

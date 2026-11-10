@@ -149,15 +149,40 @@ because they can contain connection strings. Test: `tests/improvement-http.test.
 | 2   | P1       | Deployment is not built: no container or service definition, process supervision for web and worker, TLS, secret storage, health endpoint, backup job or tested restore. ARM64 is untested                                                                      |
 | 3   | P1       | Before enabling the coding executor: neither `main` nor the improvement target branch is protected on GitHub. The application verifies candidates but cannot stop a credential with push access from writing to the target. Branch protection must enforce this |
 | 4   | P2       | `main` contains only the initial commit. Clones and visitors get no application; six stacked `codex/*` branches hold the work. Decide the integration branch before deployment                                                                                  |
-| 5   | P2       | Knowledge search requires every query term in one passage. Natural questions with one extra word return nothing. The documentation records this limit; consider ranked any-term matching before relying on grounded answers                                     |
-| 6   | P2       | No Content-Security-Policy or HSTS header. Add them at the proxy or in `next.config.ts` during deployment preparation                                                                                                                                           |
-| 7   | P3       | The live dashboard always shows knowledge as "not connected", even when the knowledge root works                                                                                                                                                                |
-| 8   | P3       | A comment in `scripts/worker.ts` says recovery never calls a model, but Phase 5 planning jobs do call the gateway from the worker when enabled. `docs/ENVIRONMENT.md` describes this correctly                                                                  |
-| 9   | P3       | Canonical JSON is implemented twice (`src/server/canonical-json.ts`, `src/integrations/n8n.ts`)                                                                                                                                                                 |
-| 10  | P3       | Four UI files and the knowledge service exceed 900 lines. Not a defect; it raises the cost of later changes                                                                                                                                                     |
+| 5   | P3       | Four UI files and the knowledge service exceed 900 lines. Not a defect; it raises the cost of later changes                                                                                                                                                     |
 
-Items 1–3 are requirements of the product's own documents. Items 5–10 are this
-reviewer's recommendations.
+Items 1–3 are requirements of the product's own documents. Items 4–5 are this
+reviewer's recommendations. Items 1–4 need owner decisions, credentials or
+remote changes, so they were not changed in code.
+
+## Second round of fixes
+
+Applied after the owner asked for the remaining code-level findings to be
+fixed.
+
+- **P2 — Knowledge search missed natural questions.** Every query term had to
+  appear in one passage, so "What is the Atlas release codename for the
+  archive?" found nothing. Queries of three or more terms now need two thirds
+  of their terms, and passages matching more terms rank first. Two-term
+  queries still need both. A question naming another project's codename still
+  returns nothing in this project. Owner and project filtering are unchanged
+  and still happen in SQL. Test: `tests/knowledge.test.ts`.
+- **P2 — No Content-Security-Policy or HSTS.** Added in `next.config.ts`: a
+  same-origin policy with `frame-ancestors 'none'`, no `unsafe-eval` outside
+  development, and HSTS without `includeSubDomains`. Inline scripts remain
+  allowed because Next.js needs them without nonces. `test:boundary` now
+  asserts the production headers. The demo browser and accessibility suites
+  pass under the development server with the policy active, and a production
+  page loaded all eight Next.js scripts with no policy violation or browser
+  error. The signed-in production UI could not be exercised without a real
+  identity proxy.
+- **P3 — Knowledge always shown as "not connected".** The dashboard now checks
+  the private folder and reports connected, unavailable with the reason, or
+  not configured. Test: `tests/provider.test.ts`.
+- **P3 — Misleading worker comment.** Corrected to say that Phase 5
+  discussion jobs can call the model.
+- **P3 — Duplicated canonical JSON.** The n8n client now uses the shared
+  implementation.
 
 ## Live versus simulated
 
@@ -172,7 +197,7 @@ the public repository's branch state and one successful CI run.
 | ----------------------- | ----------------------------------------------------------- |
 | `npm run lint`          | pass                                                        |
 | `npm run typecheck`     | pass                                                        |
-| `npm test`              | pass, 112 tests in 12 files (107 baseline + 5 new)          |
+| `npm test`              | pass, 113 tests in 13 files (107 baseline + 6 new)          |
 | `npm run format:check`  | pass                                                        |
 | `npm run build`         | pass                                                        |
 | `npm run test:boundary` | pass                                                        |

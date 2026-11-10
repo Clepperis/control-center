@@ -14,7 +14,9 @@ import { runReconcilers } from "../src/server/reconcile";
 requireLiveMode(process.env);
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
 const db = openPostgres(process.env.DATABASE_URL);
-// Recovery never invokes the gateway. Avoid requiring a gateway key just to reconcile.
+// Orchestration recovery never invokes the gateway, so reconciling needs no
+// gateway key. Phase 5 discussion jobs are separate: configuredImprovements
+// builds its own planner and calls the model only for owner-requested steps.
 const gateway = {
   async complete() {
     throw new Error("Reconciliation cannot call a model.");
