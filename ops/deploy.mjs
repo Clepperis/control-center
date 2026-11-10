@@ -34,7 +34,9 @@ export function validateReview(
     "wrong_target",
   );
   requireValue(
-    /^cc-[a-f0-9]{16}\.duckdns\.org$/.test(review.hostname),
+    /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.duckdns\.org$/.test(
+      review.hostname,
+    ),
     "unreviewed_hostname",
   );
   requireValue(

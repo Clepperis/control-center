@@ -38,6 +38,25 @@ it("binds owner procedure to exact release/artifact/target/config/schema and exp
       expiresAt: new Date(Date.now() + 60000).toISOString(),
     };
   expect(() => validateReview(review, approval, hash, machine)).not.toThrow();
+  expect(() =>
+    validateReview(
+      { ...review, hostname: "personal-center.duckdns.org" },
+      approval,
+      hash,
+      machine,
+    ),
+  ).not.toThrow();
+  for (const hostname of [
+    "-invalid.duckdns.org",
+    "invalid-.duckdns.org",
+    "a".repeat(64) + ".duckdns.org",
+    "valid.duckdns.org.attacker.example",
+    "valid.duckdns.org/path",
+    "valid.duckdns.org?x=1",
+  ])
+    expect(() =>
+      validateReview({ ...review, hostname }, approval, hash, machine),
+    ).toThrow("unreviewed_hostname");
   for (const [r, a, h, m] of [
     [review, approval, "3".repeat(64), machine],
     [review, approval, hash, "4".repeat(64)],

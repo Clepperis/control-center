@@ -81,7 +81,7 @@ prove actual cloud/firewall rules, OS account permissions or owner approval.
   "artifactSha256": "EXACT_64_HEX_TAR_HASH",
   "manifestSha256": "EXACT_64_HEX_RELEASE_MANIFEST_HASH",
   "targetMachineSha256": "SHA256_OF_EXACT_ETC_MACHINE_ID_BYTES",
-  "hostname": "cc-EXACT_16_HEX.duckdns.org",
+  "hostname": "REVIEWED_LABEL.duckdns.org",
   "port": 3210,
   "dataRoot": "/var/lib/control-center",
   "executionEnabled": false,
