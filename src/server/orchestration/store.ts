@@ -160,6 +160,13 @@ export class Store {
           throw new DomainError(409, "request_conflict");
         return { created: false, id: existing.id as string };
       }
+      // Same bound as the worker's recovery. A crashed web process must not
+      // lock the conversation until a worker runs; the interrupted model
+      // request is recorded as failed and never repeated.
+      await tx.query(
+        "UPDATE turns SET status='failed',error_code='interrupted' WHERE conversation_id=$1 AND status='pending' AND created_at<now()-interval '3 minutes'",
+        [conversationId],
+      );
       if (
         (
           await tx.query(
