@@ -82,3 +82,28 @@ it("exercises real owner-scoped no-cache HTTP lifecycle and rejects cross-origin
     ).requests,
   ).toEqual([]);
 });
+it("logs a diagnosable but content-free record for an unexpected failure", async () => {
+  const logged: string[] = [];
+  const spy = vi
+    .spyOn(console, "error")
+    .mockImplementation((line) => void logged.push(String(line)));
+  context.service!.list = async () => {
+    throw Object.assign(
+      new Error('relation "private" missing at postgres://owner:secret@db'),
+      { code: "42P01" },
+    );
+  };
+  const response = await GET(
+    new Request("http://127.0.0.1:3000/api/improvements"),
+  );
+  spy.mockRestore();
+  expect(response.status).toBe(503);
+  expect(JSON.stringify(await response.json())).not.toContain("secret");
+  expect(logged).toHaveLength(1);
+  expect(JSON.parse(logged[0])).toEqual({
+    event: "application_request_failed",
+    code: "internal",
+    kind: "Error",
+    sqlState: "42P01",
+  });
+});

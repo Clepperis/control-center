@@ -10,6 +10,7 @@ import { configuredAutomations } from "../src/server/automations/configured";
 import { KnowledgeService } from "../src/server/knowledge/service";
 import { MarkdownFiles } from "../src/server/knowledge/files";
 import { configuredImprovements } from "../src/server/improvements/configured";
+import { runReconcilers } from "../src/server/reconcile";
 requireLiveMode(process.env);
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
 const db = openPostgres(process.env.DATABASE_URL);
@@ -61,19 +62,14 @@ console.log(
 );
 try {
   while (!controller.signal.aborted) {
-    try {
-      await service.tick();
-      await automations.tick();
-      if (knowledge) await knowledge.tick();
-      await improvements.reconcileTick();
-    } catch {
-      console.error(
-        JSON.stringify({
-          event: "reconciliation_failed",
-          code: "storage_or_configuration",
-        }),
-      );
-    }
+    await runReconcilers([
+      { name: "orchestration", run: () => service.tick() },
+      { name: "automations", run: () => automations.tick() },
+      ...(knowledge
+        ? [{ name: "knowledge", run: () => knowledge.tick() }]
+        : []),
+      { name: "improvements", run: () => improvements.reconcileTick() },
+    ]);
     try {
       await delay(interval, undefined, { signal: controller.signal });
     } catch {

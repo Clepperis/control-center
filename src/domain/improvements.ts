@@ -312,6 +312,8 @@ export const improvementErrors: Record<string, string> = {
   candidate_changed:
     "Kandidatas, patikros arba tikslinė šaka pasikeitė. Reikia naujos peržiūros.",
   validation_failed: "Patikros neužbaigtos arba nepavyko. Integruoti negalima.",
+  validation_timeout:
+    "Patikros per valandą nepasibaigė, todėl automatinis tikrinimas sustabdytas. Patikrinkite CI vykdymą ir kartokite skaitymą.",
   scope_boundary:
     "Pakeitimas viršija leistiną apimtį arba liečia apsaugotus failus.",
   repository_boundary:

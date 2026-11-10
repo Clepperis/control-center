@@ -299,6 +299,35 @@ describe("durable owner orchestration", () => {
       (await store.snapshot("owner", conversationId)).messages,
     ).toHaveLength(1);
   });
+  it("releases a conversation from an interrupted turn without a worker and never repeats the model request", async () => {
+    const conversationId = randomUUID();
+    const interrupted = await store.beginTurn(
+      "owner",
+      conversationId,
+      randomUUID(),
+      "Pirma žinutė",
+    );
+    await db.query(
+      "UPDATE turns SET created_at=now()-interval '4 minutes' WHERE id=$1",
+      [interrupted.id],
+    );
+    const next = await store.beginTurn(
+      "owner",
+      conversationId,
+      randomUUID(),
+      "Antra žinutė",
+    );
+    expect(next.created).toBe(true);
+    const snapshot = await store.snapshot("owner", conversationId);
+    expect(snapshot.turns.find((t) => t.id === interrupted.id)).toMatchObject({
+      status: "failed",
+      errorCode: "interrupted",
+    });
+    expect(snapshot.messages.map((m) => m.content)).toEqual([
+      "Pirma žinutė",
+      "Antra žinutė",
+    ]);
+  });
   it.each([
     "authentication",
     "rate_limit",

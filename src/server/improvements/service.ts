@@ -18,6 +18,8 @@ import { IntegrationError } from "@/integrations/errors";
 import { rejectSecrets } from "../knowledge/text";
 
 const now = () => new Date().toISOString();
+// Three times the validation workflow's own 20 minute limit.
+const validationWaitMs = 60 * 60_000;
 type Kind =
   "discuss" | "investigate" | "submit" | "sync" | "evidence" | "cancel";
 const lockedStates = [
@@ -698,7 +700,15 @@ export class ImprovementService {
             r.integration = null;
           }
           r.candidate = candidate;
-          r.state = candidate.passed ? "ready_for_review" : "validating";
+          // Only unfinished checks justify further polling. A concluded
+          // failure is final for this commit until the owner re-reads it.
+          r.state = candidate.passed
+            ? "ready_for_review"
+            : candidate.checks.some(
+                  (c) => !["success", "pending"].includes(c.conclusion),
+                )
+              ? "failed"
+              : "validating";
           r.error = candidate.passed ? null : "validation_failed";
           break;
         }
@@ -781,6 +791,14 @@ export class ImprovementService {
           r.cancellation =
             "Viršytas vykdymo laikas. Perduodamas nutraukimas; išorinio proceso sustojimas dar nepatvirtintas.";
           await this.queue(tx, r, "cancel");
+        } else if (
+          r.state === "validating" &&
+          Date.now() - Date.parse(r.syncedAt ?? submittedAt ?? r.updatedAt) >
+            validationWaitMs
+        ) {
+          // Checks that never start or finish must not be polled indefinitely.
+          r.state = "blocked";
+          r.error = "validation_timeout";
         } else
           await this.queue(
             tx,
