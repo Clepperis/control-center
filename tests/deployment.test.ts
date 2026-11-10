@@ -128,6 +128,12 @@ it("checks exact schema and refuses old/new/modified histories without auto-migr
   const db = await openTestDatabase();
   try {
     const dir = resolve("db/migrations");
+    // inet::text includes /32; compare host(inet), never broaden the loopback
+    // allowlist to arbitrary private/NAT networks to accommodate formatting.
+    const address = await db.query<{ address: string }>(
+      "SELECT host('127.0.0.1'::inet) AS address",
+    );
+    expect(address.rows[0].address).toBe("127.0.0.1");
     await migrate(db, dir);
     await expect(checkSchema(db, dir)).resolves.toHaveLength(6);
     await db.query("UPDATE schema_migrations SET checksum=$1 WHERE name=$2", [

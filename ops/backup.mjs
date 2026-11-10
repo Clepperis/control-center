@@ -473,7 +473,7 @@ export async function restore(
       "-X",
       "-At",
       "--command",
-      "SELECT coalesce(inet_server_addr()::text,'local')",
+      "SELECT coalesce(host(inet_server_addr()),'local')",
     ],
     { env, maxBuffer: 1024, timeout: 10000 },
   );
