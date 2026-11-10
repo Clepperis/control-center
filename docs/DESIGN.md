@@ -1,33 +1,37 @@
-# Phase 2.5: dark workspace refinement
+# Linear workspace redesign
 
-## Direction and baseline
+## Direction and evidence
 
-The existing product had a large welcome/decision block ahead of its work list, repeated full-size plan cards, small metadata labels, and an inconsistent scan path between dashboard and chat. The refinement keeps the eight routes, Lithuanian product vocabulary, data sources and actions, while moving to charcoal surfaces, a compact labeled sidebar and a restrained blue interaction accent.
+The owner rejected the previous Fey/Linear hybrid as too spacious and too blue. This revision replaces its presentation with the neutral, compact list layout of the supplied [Linear dark issue-list screen on Mobbin](https://mobbin.com/screens/e142df2a-3527-499c-8f81-1b715947ac0c). The previous layout is not a constraint. The eight routes, Lithuanian content, data sources and functional approval boundaries are constraints.
 
-The local original Fey image and the exact user-linked [Fey dashboard](https://mobbin.com/screens/55551250-acb8-4686-b71e-b95288f56e48) and [Linear task list](https://mobbin.com/screens/e142df2a-3527-499c-8f81-1b715947ac0c) images were visually inspected. Fey informs surface separation, restrained accents and major-section spacing. Linear informs status groups, compact rows and aligned metadata. Their logos, financial content, chart data and screenshots are not application assets. The optional board reference was not needed: this product retains its existing list/detail flow.
+The exact reference was inspected in the browser, including its publicly displayed 3024×2010 image. Pixel sampling found `#070707` navigation, `#0f0f0f` canvas and `#1a1a1a` group surfaces. Those values are used directly. Mobbin search also returned Linear references; the supplied screen remains the design target. No third-party screenshots or brand assets ship in the application.
 
-Mobbin's connector has no direct screen-ID retrieval operation. A narrow search did not return the requested Linear screen; the exact supplied pages were inspected in the browser instead. No broad replacement search was used. Design details such as Lithuanian labels, inline plan expansion and composer placement are product-specific decisions, not claims about either reference's behavior.
+The resulting interface is similar, not a verified pixel-for-pixel reproduction. It has different content and controls, fewer fictional tasks, explicit demo/connection states, inline approval details and a mobile adaptation. There is no defensible whole-screen similarity percentage. Inter is a locally bundled implementation choice; the screenshot alone does not establish Linear's font file or every CSS value.
 
-## Reusable system
+## Shared system
 
-`src/app/globals.css` owns the dark surface layers, primary/secondary/disabled text, accent, semantic status colors, focus, type steps, spacing, radii and control sizing. Tailwind's retained neutral utilities map to the same palette. The existing font stack, Phosphor icons and Radix Dialog remain; no UI library, external font service or decorative chart was added.
+`src/app/globals.css` owns the palette, typography, spacing, geometry and interaction states. The implementation uses:
 
-- Background/navigation/surface/raised/hover roles separate areas with thin dividers rather than many elevated cards.
-- Blue marks selection, links and primary actions. Green is reserved for observed completion or verified application access; amber/red carry attention/failure states. Text always states the status.
-- `PageHeading`, `SectionTitle`, `Badge`, `ConnectionBadge`, `WorkspaceStatus` and `RecentActivity` are shared patterns.
-- Overview leads with decisions/blockers, work rows, secondary connection status and recent activity. Missing operational storage still means unknown counts, never zero-valued live metrics.
-- `RunFeed` groups actual runs by status. `RunCard` is a keyboard-accessible expandable row containing the existing objective, agent, criteria, constraints, confirmation, timestamps, errors, external link and results. Stable row identity preserves expansion across refreshes. Chat initially expands its plan for review.
-- Chat separates owner messages, assistant responses and delegation plans. The composer stays in normal document flow so it cannot cover the reviewed plan. Missing-configuration details remain discoverable and open when needed.
-- Existing projects, filters, drafts, agents and informative empty states use the same controls and surfaces. Demo/live distinction is retained.
+- An inset neutral canvas with a 1px boundary and 12px corners; a 244px desktop sidebar (220px at intermediate widths).
+- A single 44px desktop page header, 28px navigation rows and 44px work rows. Page descriptions remain available through the labeled information disclosure, without a repeated page hero.
+- Locally bundled Inter, including Lithuanian characters; 12–13px desktop content, 10–11px metadata and 13px page titles. No external font service is contacted.
+- Thin neutral outlines, rounded metadata/filter pills, gray navigation selection and restrained `#5e6ad2` primary actions. Amber/red/green indicate attention/failure/observed success with explicit text. Unconfigured connections remain neutral and labeled.
+- Wider touch targets and wrapping metadata on phones; input text is 16px to avoid mobile focus zoom. The mobile drawer retains its labeled navigation and keyboard focus behavior.
 
-## Behavior preserved
+`WorkspaceHeader` consumes the enclosing shell's actual demo/live mode and provides the same navigation, heading, page information and mode indicator everywhere. `PageHeading`, `SectionTitle`, `Badge` and `ConnectionBadge` remain shared components. Radix Dialog and Phosphor remain the primitive/icon system; no additional component framework was introduced.
 
-This phase changes no server authentication, PostgreSQL schema, gateway configuration, adapter, orchestration transition or reconciliation logic. Exact-plan owner approval, duplicate prevention, stale/uncertain/blocked states and local-only tracking stop remain. Deep links retain conversation IDs and expose stable `#run-…` targets. No live credentials, calls, tasks, workflows, external messages, deployment or remote settings changes were used for review.
+## Information and behavior
 
-## Review and validation
+Overview uses full-width decision, work, project and activity groups. Connections and execution readiness appear below, rather than narrowing the main list. Its three filter buttons actually change the visible groups. Project/task filters also change the actual list, with tasks first and project descriptions below. Demo reviews, drafts and reset retain their local persistence.
 
-Sanitized actual browser captures are kept locally under `.local/phase-2-5/before` and `after`, at matching 1440/1024/390px widths and equivalent demo/synthetic states. They are ignored, together with audit/environment files. `REVIEW_CAPTURE_DIR` lets `npm run test:ui:live` capture the proposal and result states without external services. No third-party reference images are committed.
+`RunFeed` still groups actual operational records. `RunCard` retains the complete objective, bounded task, agent, criteria, constraints, exact confirmation, timestamps, errors, freshness, external links and results. Stable row identity preserves expansion across refreshes. Chat initially expands the plan for review. The composer remains in normal flow so it cannot cover the reviewed plan.
 
-`npm run test:a11y` scans all eight demo pages at all three widths with axe AA tags, checks overflow, skip-link navigation, dialog focus trapping/return (including a removed trigger), the mobile drawer and reduced motion. The synthetic live browser suite checks the proposal/result contrast, keyboard row expansion, preserved expansion after refresh and the existing approval/status/results flow. Automated checks do not replace a complete assistive-technology audit.
+No authentication, database schema, adapter, orchestration transition or reconciliation logic changed. Missing storage means unknown operational counts, not fabricated zero metrics. A created external task is not represented as proven execution. No live calls, credentials, tasks, workflows, deployment or remote settings changes were used in this redesign.
 
-Live account verification, production OIDC/proxy setup, conventional PostgreSQL-server testing and ARM64 deployment remain the Phase 2 limitations documented in `PHASE-2.md`. This visual phase does not resolve or conceal those blockers. n8n execution remains a later phase.
+## Review
+
+Actual matched captures at 1440/1024/390px are kept locally under `.local/phase-2-5/linear-before` and `linear-after`. Comparisons are generated from those captures, not mockups. `REVIEW_CAPTURE_DIR` enables synthetic proposal/result captures with `npm run test:ui:live`. Reference research and generated images remain ignored.
+
+`npm run test:ui` covers the filters, information disclosure, review/draft persistence, reset and mobile navigation. `npm run test:a11y` scans all eight routes at three widths and checks skip links, dialogs, focus return and reduced motion. The synthetic operational suite covers plan review, keyboard expansion, exact confirmation, status/results and local-only stop. Automated checks do not constitute a complete assistive-technology audit.
+
+Live application credentials, a ready allowed agent, installed-contract verification, production identity-provider setup, conventional PostgreSQL-server testing and ARM64 runtime verification retain the limitations in [PHASE-2.md](PHASE-2.md). This design work does not mark those items complete. n8n execution remains a later phase.

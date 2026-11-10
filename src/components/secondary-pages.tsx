@@ -10,6 +10,7 @@ import {
   PaperPlaneTilt,
   FileText,
   ShieldCheck,
+  Circle,
 } from "@phosphor-icons/react";
 import type { Dashboard } from "@/domain/models";
 import { PageHeading } from "./dashboard";
@@ -145,33 +146,32 @@ export function Projects({ data }: { data: Dashboard }) {
           )
         }
       />
-      <div className="panel divide-y divide-stone-100 mb-10">
-        {data.projects.map((p) => (
-          <article id={p.id} key={p.id} className="project-row">
-            <span className="project-code">{p.code}</span>
-            <div className="flex-1">
-              <h2 className="font-semibold text-lg">{p.name}</h2>
-              <p className="muted text-sm mt-1">{p.description}</p>
-            </div>
-            <Badge>{p.stage}</Badge>
-          </article>
-        ))}
+      <div className="list-toolbar" role="group" aria-label="Rodyti užduotis">
+        <div className="filter-pills">
+          {[
+            ["all", "Visos užduotys"],
+            ["review", "Laukia peržiūros"],
+            ["planned", "Planuojama"],
+            ["waiting", "Laukia sprendimo"],
+          ].map(([value, label]) => (
+            <button
+              className="filter-pill"
+              key={value}
+              aria-pressed={filter === value}
+              onClick={() => setFilter(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <span className="toolbar-note">
+          {
+            data.tasks.filter((t) => filter === "all" || filter === t.state)
+              .length
+          }{" "}
+          užduotys
+        </span>
       </div>
-      <SectionTitle title="Užduočių sąrašas" />
-      <label htmlFor="task-filter" className="text-sm block mb-2">
-        Rodyti užduotis
-      </label>
-      <select
-        id="task-filter"
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-        className="input max-w-xs mb-5"
-      >
-        <option value="all">Visos būsenos</option>
-        <option value="review">Laukia peržiūros</option>
-        <option value="planned">Planuojama</option>
-        <option value="waiting">Laukia sprendimo</option>
-      </select>
       <div className="task-groups">
         {(["review", "waiting", "planned"] as const).map((status) => {
           const items = data.tasks.filter(
@@ -186,25 +186,30 @@ export function Projects({ data }: { data: Dashboard }) {
           return items.length ? (
             <section className="task-group" aria-label={label} key={status}>
               <h3 className="task-group-heading">
+                <Circle
+                  size={13}
+                  className={status === "review" ? "attention-state" : ""}
+                />
                 {label}
                 <span>{items.length}</span>
               </h3>
               {items.map((t) => (
-                <div
-                  id={t.id}
-                  className="project-row border-b border-stone-100"
-                  key={t.id}
-                >
-                  <FileText size={18} />
-                  <div className="flex-1">
-                    <h4 className="font-medium text-sm">{t.title}</h4>
-                    <p className="muted text-xs mt-1">
-                      {data.projects.find((p) => p.id === t.projectId)?.name}
-                    </p>
-                  </div>
-                  <Badge tone={status === "review" ? "warning" : "muted"}>
-                    {label}
-                  </Badge>
+                <div id={t.id} className="issue-row" key={t.id}>
+                  <span className="issue-id">{t.id.toUpperCase()}</span>
+                  <Circle
+                    size={13}
+                    className={
+                      status === "review"
+                        ? "attention-state"
+                        : "work-state-icon"
+                    }
+                  />
+                  <h4 className="issue-title">{t.title}</h4>
+                  <span className="metadata-pill">
+                    <FileText size={12} />
+                    {data.projects.find((p) => p.id === t.projectId)?.name}
+                  </span>
+                  <span className="issue-trailing">Nepradėta</span>
                 </div>
               ))}
             </section>
@@ -214,6 +219,25 @@ export function Projects({ data }: { data: Dashboard }) {
           <p className="muted py-6">Šiame sąraše užduočių nėra.</p>
         )}
       </div>
+      <section className="projects-section" aria-label="Projektai">
+        <SectionTitle title="Projektai" />
+        <div className="project-list divide-y divide-stone-100">
+          {data.projects.map((p) => (
+            <article
+              id={p.id}
+              key={p.id}
+              className="project-row project-summary"
+            >
+              <span className="project-code">{p.code}</span>
+              <div className="flex-1 min-w-0">
+                <h2 className="font-medium">{p.name}</h2>
+                <p className="muted">{p.description}</p>
+              </div>
+              <Badge>{p.stage}</Badge>
+            </article>
+          ))}
+        </div>
+      </section>
       {state.drafts
         .filter((d) => d.kind === "task")
         .map((d) => (

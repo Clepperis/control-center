@@ -32,6 +32,28 @@ try {
   await expect(
     page.getByRole("heading", { name: /vienas klausimas/ }),
   ).toBeVisible();
+  const overviewFilter = page.getByRole("group", { name: "Apžvalgos filtras" });
+  await overviewFilter
+    .getByRole("button", { name: "Veikla", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Naujausia veikla", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Peržiūrėti", exact: true }),
+  ).toHaveCount(0);
+  await overviewFilter
+    .getByRole("button", { name: "Reikia dėmesio", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Peržiūrėti", exact: true }),
+  ).toHaveCount(1);
+  await expect(
+    page.getByRole("heading", { name: "Naujausia veikla", exact: true }),
+  ).toHaveCount(0);
+  await overviewFilter
+    .getByRole("button", { name: "Visi darbai", exact: true })
+    .click();
   for (const path of [
     "chat",
     "projects",
@@ -61,7 +83,10 @@ try {
     }),
   ).toBeVisible();
   await page.goto(`${base}/projects`);
-  await page.getByLabel("Rodyti užduotis").selectOption("review");
+  await page
+    .getByRole("group", { name: "Rodyti užduotis" })
+    .getByRole("button", { name: "Laukia peržiūros", exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Peržiūrėti dokumentų skirstymo planą" }),
   ).toBeVisible();
@@ -70,6 +95,15 @@ try {
   ).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(base);
+  await page.getByLabel("Apie šį puslapį").click();
+  await expect(
+    page.getByText("Sprendimai, darbai ir programos ryšiai.", { exact: true }),
+  ).toBeVisible();
+  const helpBounds = await page.locator(".page-info p").boundingBox();
+  expect(
+    helpBounds && helpBounds.x >= 0 && helpBounds.x + helpBounds.width <= 390,
+  ).toBe(true);
+  await page.getByLabel("Apie šį puslapį").click();
   await page.getByRole("button", { name: "Atverti meniu" }).click();
   await page
     .getByRole("dialog")

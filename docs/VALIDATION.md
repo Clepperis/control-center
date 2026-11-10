@@ -34,3 +34,14 @@ No production deployment or ARM64 runtime validation has been performed. Real in
 - No server, integration, domain or migration behavior was changed. New dependencies are limited to a development accessibility test tool. Secrets, the private audit and third-party reference images were excluded from the public commit.
 
 Automated checks are not a complete screen-reader or assistive-technology audit. Live integrations, production identity-provider configuration and ARM64 testing retain the Phase 2 limitations above. This phase makes no deployment or remote application-setting changes.
+
+## Linear redesign follow-up
+
+- Rebuilt the presentation against the exact owner-supplied Linear dark list reference. Actual dashboard, project/task list, demo chat, settings and synthetic proposal/result captures were reviewed at desktop, intermediate and mobile sizes. Local before/after boards and captures remain ignored under `.local/phase-2-5/linear-*`.
+- All eight demo routes at 1440/1024/390px pass the AA-tagged axe scans and horizontal-overflow checks. Skip links, dialog focus/trapping/return, removed-trigger fallback, mobile drawer and reduced motion pass.
+- Demo browser checks pass, including the new overview filters, task pill filters, mobile page-information disclosure bounds, review/draft persistence and reset. The synthetic operational suite passes exact confirmation, single delegation, status/results, preserved row expansion and local-only tracking stop. No unexpected browser console/runtime errors were recorded.
+- Lint, explicit type-check, all 32 deterministic tests, the final production build, production-artifact authentication boundary and formatting pass. Development bypass is still rejected in a production build, including when runtime `NODE_ENV=test`.
+- The sole new runtime dependency is a locally bundled Inter font, including Lithuanian characters. Full dependency audit reports zero vulnerabilities. No remote font requests, live model calls, external task/workflow creation, deployment or remote configuration changes were introduced.
+- Public changes contain sanitized source/documentation only. Audit files, environment configuration, generated captures and reference research remain local and ignored.
+
+The result is visually similar to the supplied reference, not a verified pixel-identical copy. Live integration and deployment limitations above remain unresolved by this visual work.

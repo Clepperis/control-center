@@ -45,7 +45,7 @@ The live UI identifies missing setup and never substitutes demo data. Read [inte
 
 Browser tests use installed Chrome (`BROWSER_CHANNEL=msedge` selects Edge). Generated screenshots and test data remain ignored under `.local`. Restricted Windows environments may require subprocess permission for tests/builds.
 
-The interface now uses the Phase 2.5 dark design system. See [design decisions and reference use](docs/DESIGN.md). `npm run test:a11y` checks all pages at 1440/1024/390px, AA rules and keyboard behavior against the running demo server.
+The interface uses a compact Linear-inspired dark workspace, with locally bundled Inter, neutral surfaces and grouped work lists. See [design decisions and reference use](docs/DESIGN.md). `npm run test:a11y` checks all pages at 1440/1024/390px, AA rules and keyboard behavior against the running demo server.
 
 Production requires a trusted OIDC login/session proxy plus independent signed-JWT owner verification. A production build alone is not deployment readiness. No deployment or remote infrastructure changes are included.
 

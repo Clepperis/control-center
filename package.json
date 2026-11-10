@@ -23,6 +23,7 @@
     "format:check": "prettier --check src scripts tests docs README.md db/README.md"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.3.0",
     "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-dialog": "^1.1.15",
     "jose": "^6.1.3",
