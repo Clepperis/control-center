@@ -1,6 +1,26 @@
 import { spawn } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 import assert from "node:assert/strict";
+import { readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
+// Runtime knowledge is external data, never a traced standalone asset.
+const forbidden =
+  /(?:AUDIT[^/\\]*\.md|[/\\]\.env[^/\\]*$|[/\\](?:private|audit|\.local|\.data)[/\\])/i;
+for (const file of await readdir(".next/server", { recursive: true })) {
+  if (!file.endsWith(".nft.json")) continue;
+  const trace = JSON.parse(await readFile(join(".next/server", file), "utf8"));
+  assert(
+    !(trace.files as string[]).some((p) => forbidden.test(p)),
+    "Standalone trace contains a private/local file",
+  );
+}
+const standalone = await readdir(".next/standalone");
+assert(
+  !standalone.some((p) =>
+    /AUDIT|^\.env|^private$|^audit$|^\.local$|^\.data$/i.test(p),
+  ),
+  "Standalone artifact contains private/local files",
+);
 const base = "http://127.0.0.1:3101";
 for (const { mode, nodeEnv } of [
   { mode: "development", nodeEnv: "production" },
@@ -53,6 +73,8 @@ for (const { mode, nodeEnv } of [
       "/api/workspace",
       "/api/agents",
       "/api/automations",
+      "/api/knowledge",
+      "/api/knowledge?op=projects",
       "/api/conversations/22222222-2222-4222-8222-222222222222",
     ]) {
       const response = await fetch(base + path);
@@ -66,6 +88,7 @@ for (const { mode, nodeEnv } of [
     assert.equal(mutation.status, mode === "development" ? 503 : 401);
     for (const path of [
       "/api/automations",
+      "/api/knowledge",
       "/api/automations/22222222-2222-4222-8222-222222222222",
     ]) {
       const response = await fetch(base + path, {

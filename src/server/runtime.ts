@@ -16,6 +16,8 @@ import {
 } from "./config";
 import type { Database } from "./db/types";
 import { configuredAutomations } from "./automations/configured";
+import { KnowledgeService } from "./knowledge/service";
+import { MarkdownFiles } from "./knowledge/files";
 const globalDb = globalThis as typeof globalThis & {
   controlCenterDb?: Database;
 };
@@ -61,10 +63,17 @@ export function getService() {
     adapters.paperclip,
     process.env.LIVE_DELEGATION_ENABLED === "true",
     getAutomationService(),
+    getKnowledgeService(),
   );
 }
 export function getAutomationService() {
   return configuredAutomations(getStore());
+}
+export function getKnowledgeService() {
+  return new KnowledgeService(
+    getStore().db,
+    new MarkdownFiles(process.env.KNOWLEDGE_ROOT ?? ""),
+  );
 }
 export function setupStatus() {
   let n8nExecutionEnabled = false;

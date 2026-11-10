@@ -4,7 +4,7 @@ import { resolve, dirname, basename } from "node:path";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { openTestDatabase } from "./pglite";
 import { migrate } from "../src/server/db/migrate";
-import { Store, marker } from "../src/server/orchestration/store";
+import { Store, marker, digest } from "../src/server/orchestration/store";
 import { OrchestrationService } from "../src/server/orchestration/service";
 import type { Database } from "../src/server/db/types";
 import type { PlanningGateway } from "../src/integrations/nexos";
@@ -111,6 +111,24 @@ async function proposed() {
   return { conversationId, requestId, snapshot, run: snapshot.runs[0] };
 }
 describe("durable owner orchestration", () => {
+  it("keeps pre-Phase-4 unscoped request hashes compatible", async () => {
+    const conversationId = randomUUID(),
+      requestId = randomUUID(),
+      text = "Legacy synthetic request";
+    const first = await store.beginTurn(
+      "owner",
+      conversationId,
+      requestId,
+      text,
+    );
+    await db.query("UPDATE turns SET input_hash=$2 WHERE id=$1", [
+      first.id,
+      digest(`${conversationId}\n${text}`),
+    ]);
+    expect(
+      await store.beginTurn("owner", conversationId, requestId, text),
+    ).toEqual({ created: false, id: first.id });
+  });
   it("persists conversations, separates proposal from execution and rejects duplicate/mismatched submissions", async () => {
     const { conversationId, requestId, snapshot } = await proposed();
     expect(snapshot.messages).toHaveLength(2);

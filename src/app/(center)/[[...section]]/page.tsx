@@ -9,6 +9,10 @@ import {
 } from "@/components/live-workspace";
 import { setupStatus } from "@/server/runtime";
 import { AutomationWorkspace } from "@/components/automations";
+import {
+  KnowledgeWorkspace,
+  ProjectKnowledgeLinks,
+} from "@/components/knowledge";
 import { PageHeading } from "@/components/dashboard";
 import { Overview } from "@/components/dashboard";
 import {
@@ -40,6 +44,7 @@ export default async function Page({
     if (!section[0]) return <LiveOverview {...live} />;
     if (section[0] === "chat") return <LiveChat setup={setupStatus()} />;
     if (section[0] === "agents") return <LiveAgents />;
+    if (section[0] === "knowledge") return <KnowledgeWorkspace />;
     if (section[0] === "projects")
       return (
         <>
@@ -48,6 +53,7 @@ export default async function Page({
             title="Deleguotų darbų peržiūra"
             description="Čia rodomi programos planai ir susietos Paperclip užduotys. Išorinio darbo būseną valdo Paperclip."
           />
+          <ProjectKnowledgeLinks />
           {live.error && <p className="notice mb-5">{live.error}</p>}
           <RunFeed runs={live.runs} />
           {!live.runs.length && (

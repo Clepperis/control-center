@@ -33,6 +33,8 @@ import { Badge, EmptyState, SectionTitle } from "./ui";
 import type { Agent, Dashboard } from "@/domain/models";
 import type { AutomationRun } from "@/domain/automations";
 import { AutomationFeed } from "./automations";
+import { knowledgeRequest } from "./knowledge";
+import type { Project, KnowledgeScope } from "@/domain/knowledge";
 export interface Setup {
   database: boolean;
   model: string;
@@ -492,6 +494,11 @@ export function LiveChat({ setup }: { setup: Setup }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [text, setText] = useState("");
+  const [projects, setProjects] = useState<Project[]>([]),
+    [projectId, setProjectId] = useState(""),
+    [useKnowledge, setUseKnowledge] = useState(false),
+    [includeGlobal, setIncludeGlobal] = useState(false),
+    [knowledgeError, setKnowledgeError] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -500,6 +507,7 @@ export function LiveChat({ setup }: { setup: Setup }) {
     conversationId: string;
     requestId: string;
     text: string;
+    knowledge: KnowledgeScope | null;
   } | null>(null);
   const load = useCallback(
     async (signal?: AbortSignal) => {
@@ -545,6 +553,11 @@ export function LiveChat({ setup }: { setup: Setup }) {
     };
   }, [load]);
   useEffect(() => () => inflight.current?.abort(), []);
+  useEffect(() => {
+    knowledgeRequest<{ projects: Project[] }>("?op=projects")
+      .then((v) => setProjects(v.projects))
+      .catch((e) => setKnowledgeError(e.message));
+  }, []);
   async function send(e?: FormEvent) {
     e?.preventDefault();
     if (inflight.current || busy || (!attempt && !text.trim())) return;
@@ -552,6 +565,9 @@ export function LiveChat({ setup }: { setup: Setup }) {
       conversationId: conversationId ?? crypto.randomUUID(),
       requestId: crypto.randomUUID(),
       text: text.trim(),
+      knowledge: useKnowledge
+        ? { projectId: projectId || null, includeGlobal }
+        : null,
     };
     setAttempt(body);
     setConversationId(body.conversationId);
@@ -664,11 +680,50 @@ export function LiveChat({ setup }: { setup: Setup }) {
           )}
           <div className="chat-messages">
             {snapshot?.messages.map((m) => (
-              <article className={`message message-${m.role}`} key={m.id}>
+              <article
+                id={`message-${m.id}`}
+                className={`message message-${m.role}`}
+                key={m.id}
+              >
                 <p className="overline mb-3">
                   {m.role === "user" ? "Jūs" : "Modelio atsakymas"}
                 </p>
-                <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                <p className="whitespace-pre-wrap break-words">
+                  {m.content.split(/(\[S[1-6]\])/g).map((part, i) =>
+                    m.grounding?.cited.includes(part.slice(1, -1)) ? (
+                      <Link
+                        className="text-link"
+                        key={i}
+                        href={`/knowledge?message=${m.id}&citation=${part.slice(1, -1)}`}
+                      >
+                        {part}
+                      </Link>
+                    ) : (
+                      part
+                    ),
+                  )}
+                </p>
+                {m.role === "assistant" && (
+                  <div className="knowledge-chat-status mt-3">
+                    <p className="muted text-xs">
+                      {m.grounding?.scope
+                        ? `Aprėptis: ${projects.find((p) => p.id === m.grounding!.scope!.projectId)?.name ?? (m.grounding.scope.projectId ? "Projektas" : "Bendros žinios")}${m.grounding.scope.projectId && m.grounding.scope.includeGlobal ? " ir bendros žinios" : ""}. `
+                        : ""}
+                      {m.grounding?.status === "used"
+                        ? "Atsakymui pateiktos šaltinių ištraukos; citatas patikrinkite."
+                        : m.grounding?.status === "uncited"
+                          ? "Ištraukos pateiktos, bet atsakymas jų necituoja. Šaltinių pagrindimas nepatvirtintas."
+                          : m.grounding?.status === "empty"
+                            ? "Tinkamų indeksuotų ištraukų nerasta. Atsakymas be projekto žinių pagrindimo."
+                            : m.grounding?.status === "unavailable"
+                              ? "Žinių paieška nepasiekiama. Atsakymas pateiktas be projekto žinių."
+                              : "Atsakymas pateiktas be projekto žinių paieškos."}
+                    </p>
+                    <Link className="text-link text-xs mt-2" href="/knowledge">
+                      Žinios ir laukiantys atminties pasiūlymai
+                    </Link>
+                  </div>
+                )}
                 {m.usage &&
                   Object.values(m.usage).some((v) => v !== undefined) && (
                     <p className="text-xs text-stone-500 mt-3">
@@ -724,6 +779,57 @@ export function LiveChat({ setup }: { setup: Setup }) {
             )}
           </div>
           <form className="chat-composer" onSubmit={send}>
+            <div className="knowledge-toolbar mb-4">
+              <label className="knowledge-check">
+                <input
+                  type="checkbox"
+                  checked={useKnowledge}
+                  disabled={busy || !!attempt}
+                  onChange={(e) => setUseKnowledge(e.target.checked)}
+                />{" "}
+                Naudoti projekto žinias
+              </label>
+              {useKnowledge && (
+                <>
+                  <label>
+                    Aktyvus projektas
+                    <select
+                      className="input"
+                      value={projectId}
+                      disabled={busy || !!attempt}
+                      onChange={(e) => setProjectId(e.target.value)}
+                    >
+                      <option value="">
+                        Pasirinkite projektą arba bendras žinias
+                      </option>
+                      {projects.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="knowledge-check">
+                    <input
+                      type="checkbox"
+                      checked={includeGlobal}
+                      disabled={busy || !!attempt}
+                      onChange={(e) => setIncludeGlobal(e.target.checked)}
+                    />{" "}
+                    Leisti bendras žinias
+                  </label>
+                  <p className="muted text-xs">
+                    Aprėptis:{" "}
+                    {projects.find((p) => p.id === projectId)?.name ??
+                      "Tik aiškiai leistos bendros žinios"}
+                    . Žinių klausimas nesiūlo agentų ar automatizacijų vykdymo.
+                  </p>
+                </>
+              )}
+            </div>
+            {useKnowledge && knowledgeError && (
+              <p className="notice mb-3">{knowledgeError}</p>
+            )}
             <label
               htmlFor="live-message"
               className="block font-medium text-sm mb-2"
@@ -755,6 +861,7 @@ export function LiveChat({ setup }: { setup: Setup }) {
                   pending ||
                   !!attempt ||
                   !text.trim() ||
+                  (useKnowledge && !projectId && !includeGlobal) ||
                   !setup.database ||
                   !setup.modelEnabled
                 }

@@ -1,5 +1,44 @@
 # Validation record
 
+## Phase 4
+
+Validated locally on Windows, Node 24.16 and installed Chrome:
+
+- 80 tests pass across 7 suites, including the earlier chat/Paperclip/n8n
+  regressions. New tests execute real PostgreSQL migrations in PGlite, real
+  Markdown storage, external/concurrent edit conflicts, junction/traversal
+  rejection, preview/duplicate imports, incremental indexing/rebuild,
+  archived/missing source removal, immutable citations and 410 behavior, memory
+  approval/conflict acknowledgement/supersession, and actual database close/reopen.
+- Real knowledge HTTP handlers are exercised with an explicitly substituted
+  authenticated owner/database factory, including origin/body/schema/ownership
+  checks. Gateway transport tests keep injected source text separate from system
+  instructions. Knowledge-turn tool proposals are rejected by server policy.
+- The synthetic operational browser suite verifies project/document creation,
+  inert Markdown, project-isolated search, import preview/confirmation, pending
+  memory review and approval, clicking an answer's citation after the source
+  changes, and recoverable archive/restore. AA axe scans and reflow pass at
+  1440/1024/390px. Desktop/mobile captures were visually inspected. Model and
+  browser-service transport are deterministic substitutes, not live quality proof.
+- Existing demo interactions and all eight demo-route accessibility scans pass.
+  Existing Paperclip and n8n synthetic browser scenarios pass. Production HTTP
+  checks deny unauthorized reads/mutations, including the new knowledge routes.
+- ESLint, TypeScript, formatting and optimized production build pass. Runtime
+  private-volume access opts out of asset tracing; explicit exclusions and the
+  production boundary script verify no audit/environment/private/local-data files
+  enter standalone traces or the artifact root. Generated builds stay ignored.
+- The LT/EN fixture records 8/8 chosen positive lexical matches, isolated Harbor
+  and explicit-global results, and a demonstrated paraphrase miss. See the exact
+  queries and limitations in [Phase 4](PHASE-4.md).
+
+No private documents, embeddings, real model completions, deployments or paid
+indexing were used. Local application PostgreSQL, private `KNOWLEDGE_ROOT`,
+`NEXOS_API_KEY` and exact `NEXOS_MODEL` are not configured; model calls remain
+disabled. A real grounded-answer test still requires those settings and explicit
+approval of the selected synthetic source, provider destination and bounded call.
+Conventional PostgreSQL-server, eventual filesystem/ARM64 and production backup/
+restore remain unverified. Next is the dedicated Improve System agent.
+
 ## Phase 1 foundation
 
 Validated locally on Windows with Node 24.16 and installed Chrome:

@@ -1,5 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { Database, Sql } from "../db/types";
+import type { Grounding, KnowledgeScope } from "@/domain/knowledge";
+import { canonicalJson } from "../canonical-json";
 import { toAutomationRun } from "../automations/records";
 import type {
   Conversation,
@@ -82,7 +84,7 @@ export class Store {
     const c = await this.ownedConversation(owner, conversationId);
     const messages = (
       await this.db.query(
-        "SELECT * FROM messages WHERE conversation_id=$1 ORDER BY created_at,id",
+        "SELECT m.*,t.knowledge_scope FROM messages m JOIN turns t ON t.id=m.turn_id WHERE m.conversation_id=$1 ORDER BY m.created_at,m.id",
         [conversationId],
       )
     ).rows.map((r) => ({
@@ -91,6 +93,8 @@ export class Store {
       content: r.content as string,
       usage: r.usage as Usage | null,
       createdAt: iso(r.created_at)!,
+      grounding: r.grounding as Grounding | null,
+      scope: r.knowledge_scope as KnowledgeScope | null,
     }));
     const runs = (
       await this.db.query(
@@ -131,8 +135,14 @@ export class Store {
     conversationId: string,
     requestId: string,
     text: string,
+    scope: KnowledgeScope | null = null,
   ) {
-    const inputHash = digest(`${conversationId}\n${text}`);
+    // Preserve Phase 2/3 idempotency for existing ordinary turns.
+    const inputHash = digest(
+      scope
+        ? `${conversationId}\n${text}\n${canonicalJson(scope)}`
+        : `${conversationId}\n${text}`,
+    );
     return this.db.transaction(async (tx) => {
       await tx.query(
         "INSERT INTO conversations(id,owner_subject,title) VALUES($1,$2,$3) ON CONFLICT(id) DO NOTHING",
@@ -161,8 +171,14 @@ export class Store {
         throw new DomainError(409, "turn_pending");
       const id = randomUUID();
       const inserted = await tx.query(
-        "INSERT INTO turns(id,conversation_id,request_id,input_hash,status) VALUES($1,$2,$3,$4,'pending') ON CONFLICT(request_id) DO NOTHING RETURNING id",
-        [id, conversationId, requestId, inputHash],
+        "INSERT INTO turns(id,conversation_id,request_id,input_hash,status,knowledge_scope) VALUES($1,$2,$3,$4,'pending',$5) ON CONFLICT(request_id) DO NOTHING RETURNING id",
+        [
+          id,
+          conversationId,
+          requestId,
+          inputHash,
+          scope ? JSON.stringify(scope) : null,
+        ],
       );
       if (!inserted.rows.length) throw new DomainError(409, "request_conflict");
       await tx.query(

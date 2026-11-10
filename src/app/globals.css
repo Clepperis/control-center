@@ -1,5 +1,180 @@
 @import "tailwindcss";
 
+/* Phase 4 uses the existing workspace controls and neutral design tokens. */
+.knowledge-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+.knowledge-toolbar > label {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.knowledge-toolbar .knowledge-check {
+  flex: 0 1 auto;
+}
+.knowledge-check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 32px;
+}
+.knowledge-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: #5e6ad2;
+  flex-shrink: 0;
+}
+.knowledge-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.5fr);
+  gap: 24px;
+  margin-top: 20px;
+}
+.knowledge-layout > section {
+  min-width: 0;
+}
+.knowledge-editor {
+  border-left: 1px solid var(--line);
+  padding-left: 24px;
+}
+.knowledge-textarea {
+  font-family: ui-monospace, monospace;
+  min-height: 220px;
+  resize: vertical;
+}
+.knowledge-list {
+  margin-top: 12px;
+}
+.knowledge-list > li {
+  border-bottom: 1px solid var(--line);
+  padding: 12px 0;
+  overflow-wrap: anywhere;
+}
+.knowledge-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 11px;
+}
+.knowledge-review {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  min-width: 0;
+}
+.knowledge-review h2,
+.knowledge-review h3 {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.knowledge-review label {
+  display: block;
+  margin-top: 12px;
+}
+.knowledge-review label.knowledge-check {
+  display: flex;
+}
+.knowledge-evidence {
+  border-left: 3px solid #5e6ad2;
+  padding: 12px;
+  margin: 12px 0;
+  overflow-wrap: anywhere;
+}
+.knowledge-plain,
+.knowledge-markdown pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  padding: 10px;
+  background: #151515;
+  border-radius: 5px;
+  max-width: 100%;
+}
+.knowledge-markdown {
+  overflow-wrap: anywhere;
+  margin: 12px 0;
+  line-height: 1.7;
+}
+.knowledge-markdown p {
+  margin: 8px 0;
+  white-space: pre-wrap;
+}
+.knowledge-markdown h3,
+.knowledge-markdown h4 {
+  font-weight: 600;
+  margin: 14px 0 8px;
+}
+.knowledge-markdown ul {
+  list-style: disc;
+  padding-left: 20px;
+}
+.knowledge-markdown a {
+  text-decoration: underline;
+}
+.knowledge-result {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 0;
+  width: 100%;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.knowledge-result span {
+  font-size: 12px;
+}
+.knowledge-upload {
+  font-size: 12px;
+}
+.knowledge-upload input {
+  display: block;
+  max-width: 100%;
+  margin-top: 6px;
+}
+.knowledge-provenance {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 6px;
+  margin: 12px 0;
+  font-size: 12px;
+}
+.knowledge-provenance dd {
+  overflow-wrap: anywhere;
+}
+.knowledge-projects {
+  margin-bottom: 24px;
+}
+@media (max-width: 760px) {
+  .knowledge-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .knowledge-editor {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding-left: 0;
+    padding-top: 20px;
+  }
+  .knowledge-toolbar > label {
+    flex-basis: 100%;
+  }
+  .knowledge-provenance {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .knowledge-provenance dt {
+    font-weight: 600;
+  }
+  .knowledge-check {
+    min-height: 44px;
+  }
+}
+
 /* Linear reference: neutral surfaces and list geometry; product-specific status colors. */
 :root {
   color-scheme: dark;

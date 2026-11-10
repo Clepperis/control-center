@@ -8,6 +8,14 @@ Use separate migration/runtime database roles in production. Tests run these mig
 
 Versioned SQL migrations are the schema source. Never write to Paperclip or n8n internal databases. The UI demo requires no database.
 
+`004_knowledge.sql` adds owner scope to projects; registered Markdown documents,
+immutable revision metadata, derived chunks with exact passage offsets/FTS,
+bounded import previews, reviewed memory proposals and chat grounding manifests.
+The old unused `knowledge_index` remains for compatibility; current retrieval
+uses `knowledge_chunks`. Run `npm run knowledge:index -- --rebuild` for a finite
+rebuild of registered documents, or queue it in the UI and run the worker.
+Private Markdown/history and operational PostgreSQL need separate backups.
+
 `001_foundation.sql` defines local projects and a derived knowledge search index. Future operational records must reference external task IDs rather than duplicate Paperclip's task lifecycle. The index is not a knowledge authority. Use `simple` text search initially and evaluate Lithuanian/English queries before adding semantic search.
 
 Migrations require a separate application database and a controlled local migration step. Do not put database credentials on a command line or run migrations against remote services during development.

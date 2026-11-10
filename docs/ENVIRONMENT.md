@@ -30,6 +30,13 @@ Copy `.env.example` to `.env.local` once. Never overwrite existing secrets. All 
 
 Demo review needs no credentials. Phase 2 needs only application PostgreSQL, nexos and Paperclip setup. n8n, mail, hosting, Telegram and vault access are not required.
 
+Phase 4 additionally uses server-only `KNOWLEDGE_ROOT`: an absolute, private,
+persistent Markdown directory outside the public checkout and its parents.
+Web and worker must share it. There is no default vault, folder scanning,
+Obsidian dependency or embedding credential. Use migration 004 and read
+[storage permissions, import limits and recovery](PHASE-4.md). Missing knowledge
+configuration leaves ordinary chat available and explicitly ungrounded.
+
 Phase 3 adds n8n only for its automation path. See [secure setup and the live gate](PHASE-3.md). All discovered workflows are read-only unless the dedicated contract matches. n8n's connection check is a real authorized read; a configured URL is not a verified connection. The worker handles at most three automation requests per tick in addition to Phase 2 reconciliation; it never submits an automation.
 
 Migrations are explicit, transactional and checksum-checked. Add versions rather than edit applied SQL. Application startup does not silently migrate a database. Back up and test restore before production changes.

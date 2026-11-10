@@ -6,7 +6,8 @@ import { DomainError } from "./orchestration/store";
 import { IntegrationError } from "@/integrations/errors";
 import { errorLabels } from "@/domain/orchestration";
 import { automationErrors } from "@/domain/automations";
-export async function readJson(request: Request) {
+import { knowledgeErrors } from "@/domain/knowledge";
+export async function readJson(request: Request, maxBytes = 32000) {
   const origin = process.env.APP_ORIGIN;
   if (!origin || request.headers.get("origin") !== origin)
     throw new DomainError(403, "origin");
@@ -21,7 +22,7 @@ export async function readJson(request: Request) {
       const { done, value } = await reader.read();
       if (done) break;
       size += value.length;
-      if (size > 32000) {
+      if (size > maxBytes) {
         await reader.cancel();
         throw new DomainError(413, "body_size");
       }
@@ -70,7 +71,9 @@ export async function api(fn: (owner: string) => Promise<unknown>) {
           error:
             labels[error.code] ??
             automationErrors[error.code] ??
+            knowledgeErrors[error.code] ??
             "Užklausa netinkama.",
+          code: error.code,
         },
         { status: error.status },
       );

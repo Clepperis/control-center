@@ -7,6 +7,7 @@ import { resolve } from "node:path";
 import { mkdir } from "node:fs/promises";
 import AxeBuilder from "@axe-core/playwright";
 import { verifyAutomationUi } from "./automation-ui-scenario";
+import { prepareKnowledgeUi, verifyKnowledgeUi } from "./knowledge-ui-scenario";
 import { openTestDatabase } from "../tests/pglite";
 import { migrate } from "../src/server/db/migrate";
 import { Store } from "../src/server/orchestration/store";
@@ -123,12 +124,13 @@ const child = spawn(
   ],
   {
     windowsHide: true,
-    stdio: "ignore",
+    stdio: ["ignore", "pipe", "pipe"],
     env: {
       ...process.env,
       NODE_ENV: "development",
       AUTH_MODE: "development",
       DATA_MODE: "live",
+      CONTROL_CENTER_TEST_DIST: "true",
       APP_ORIGIN: base,
       DATABASE_URL: `postgresql://synthetic:synthetic@127.0.0.1:${address.port}/synthetic`,
       LIVE_MODEL_ENABLED: "false",
@@ -143,10 +145,16 @@ const child = spawn(
     },
   },
 );
+let serverOutput = "";
+for (const stream of [child.stdout, child.stderr])
+  stream?.on("data", (chunk) => {
+    serverOutput = (serverOutput + chunk.toString()).slice(-6000);
+  });
 const browser = await chromium.launch({
   channel: process.env.BROWSER_CHANNEL ?? "chrome",
   headless: true,
 });
+let knowledgeUi: Awaited<ReturnType<typeof prepareKnowledgeUi>> | undefined;
 try {
   let ready = false;
   for (let i = 0; i < 100; i++) {
@@ -158,7 +166,10 @@ try {
     } catch {}
     await delay(200);
   }
-  expect(ready).toBe(true);
+  if (!ready)
+    throw new Error(
+      `Synthetic local server did not become ready: ${serverOutput}`,
+    );
   expect((await fetch(base + "/api/workspace")).status).toBe(503);
   expect((await fetch(base + "/api/automations")).status).toBe(503);
   for (const path of [
@@ -194,6 +205,7 @@ try {
     viewport: { width: 1440, height: 1000 },
   });
   const page = await context.newPage();
+  knowledgeUi = await prepareKnowledgeUi(page, store, owner);
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => {
@@ -205,7 +217,12 @@ try {
     }),
   );
   await page.route("**/api/conversations/*", async (route) =>
-    route.fulfill({ json: await store.snapshot(owner, conversationId) }),
+    route.fulfill({
+      json: await store.snapshot(
+        owner,
+        new URL(route.request().url()).pathname.split("/").at(-1)!,
+      ),
+    }),
   );
   await page.route("**/api/runs/*", async (route) => {
     const id = new URL(route.request().url()).pathname.split("/").at(-1)!;
@@ -308,6 +325,7 @@ try {
     ),
   ).toBe(true);
   await verifyAutomationUi(page, store, owner, base, captureReview);
+  await verifyKnowledgeUi(page, store, owner, base, knowledgeUi);
   for (const path of [
     "",
     "chat",
@@ -339,5 +357,6 @@ try {
     else child.once("exit", () => r());
   });
   await db.close();
+  await knowledgeUi?.cleanup();
   await new Promise<void>((r) => trap.close(() => r()));
 }

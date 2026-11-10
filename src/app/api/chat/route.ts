@@ -2,11 +2,13 @@ import { z } from "zod";
 import { api, readJson } from "@/server/http";
 import { getService, getAutomationService } from "@/server/runtime";
 import { requireLiveMode } from "@/server/config";
+import { scopeSchema } from "@/domain/knowledge";
 const schema = z
   .object({
     conversationId: z.uuid(),
     requestId: z.uuid(),
     text: z.string().trim().min(1).max(4000),
+    knowledge: scopeSchema.nullable().optional(),
   })
   .strict();
 export async function POST(request: Request) {
@@ -19,6 +21,7 @@ export async function POST(request: Request) {
       body.requestId,
       body.text,
       request.signal,
+      body.knowledge ?? null,
     );
     return {
       ...snapshot,

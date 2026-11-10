@@ -33,6 +33,14 @@ The Phase 1 UI does not have production authentication configuration or a login 
 
 ## Self-hosting
 
+Phase 4 adds `src/server/knowledge` to the existing application and worker.
+Private Markdown outside the checkout is authoritative; immutable file revisions
+back server-generated citations. PostgreSQL owns project/owner metadata,
+rebuildable lexical passage indexes and explicit memory proposal/approval state.
+Knowledge turns offer no tools and filter scope before providing untrusted
+reference data to the existing gateway. Obsidian remains optional. See
+[Phase 4 decisions, recovery and limitations](PHASE-4.md).
+
 Phase 3 extends `AutomationAdapter` and the existing worker with `src/server/automations`. Control Center owns immutable reviewed requests; n8n remains authoritative for workflows, execution status and schedules. One fixed-origin official MCP client covers catalog, manual execution and status/result reads with separate application credentials. Atomic approval claims and correlation-based read recovery never resubmit an uncertain action. Chat and the automation catalog use the same service; no Paperclip wrapper or second orchestration framework is introduced. See [Phase 3 evidence and limitations](PHASE-3.md).
 
 Phase 2 adds `src/server/orchestration` (durable state machine), `src/server/db` (PostgreSQL/migrations), guarded `src/app/api` handlers and server-only adapters. Mutations enforce exact configured origin, JSON/body limits and owner identity. The separate worker reconciles status and cannot call models or create tasks. See [Phase 2 decisions](PHASE-2.md).

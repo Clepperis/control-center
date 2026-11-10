@@ -23,6 +23,18 @@ Phase 2 implementation now includes durable conversations/proposals, exact confi
 
 The n8n application adapter, curated catalog, immutable owner confirmations, one-attempt submission, durable execution linking and bounded recovery are implemented. Catalog and chat share the same service. A dedicated harmless draft was created and validated through development MCP; it remains unpublished and unexecuted. Application PostgreSQL/credentials, exact installed-version verification and explicit approval for a bounded live test are outstanding. See [Phase 3](PHASE-3.md); this is not a live-verified release.
 
-## Next: knowledge and project memory
+## Phase 4
 
-Connect a private Markdown source with project-scoped retrieval, provenance, reviewed writes and rebuildable search. Workflow output cannot authorize or silently become approved memory. Preserve native n8n scheduling ownership. After that, introduce isolated Improve System execution with review and production approval, then consider notifications, richer context and optional editors. Investment remains deferred.
+Private Markdown creation/import/editing, stable IDs/revisions, explicit scope,
+PostgreSQL passage search, durable indexing/rebuild, historical citations and
+reviewed memory approval/supersession are implemented. Synthetic local tests
+verify application behavior. Real model answer quality and the eventual
+PostgreSQL-server/filesystem/ARM64 deployment remain unverified. See
+[Phase 4](PHASE-4.md). No embeddings or private data ingestion was enabled.
+
+## Next: dedicated Improve System agent
+
+Introduce isolated execution with one bounded task, a reviewable diff, tests and
+explicit production approval. Paperclip owns delegated work; n8n owns workflow
+execution. Then consider notifications, richer context and optional editors.
+Investment remains deferred.

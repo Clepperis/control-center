@@ -11,6 +11,8 @@ import type { DelegationAdapter } from "@/integrations/paperclip";
 import { IntegrationError } from "@/integrations/errors";
 import { Store, DomainError, digest, marker, toRun } from "./store";
 import type { AutomationService } from "../automations/service";
+import type { KnowledgeService } from "../knowledge/service";
+import type { Grounding, KnowledgeScope } from "@/domain/knowledge";
 
 export class OrchestrationService {
   constructor(
@@ -19,6 +21,7 @@ export class OrchestrationService {
     private paperclip: DelegationAdapter,
     private delegationEnabled: boolean,
     private automations?: AutomationService,
+    private knowledge?: KnowledgeService,
   ) {}
   async agents(): Promise<Agent[]> {
     try {
@@ -39,34 +42,74 @@ export class OrchestrationService {
     requestId: string,
     text: string,
     signal?: AbortSignal,
+    scope: KnowledgeScope | null = null,
   ) {
+    if (scope && this.knowledge)
+      await this.knowledge.project(owner, scope.projectId);
     const turn = await this.store.beginTurn(
       owner,
       conversationId,
       requestId,
       text,
+      scope,
     );
     if (!turn.created) return this.store.snapshot(owner, conversationId);
     try {
       // Gateway conversation is bounded. External task results are never inserted as instructions.
       const snapshot = await this.store.snapshot(owner, conversationId);
-      const messages = snapshot.messages
+      const messages = (
+        scope
+          ? [{ role: "user" as const, content: text }]
+          : snapshot.messages.filter((m) => !m.scope)
+      )
         .slice(-20)
         .map(({ role, content }) => ({ role, content }));
       let agents: Agent[] = [];
       try {
+        if (scope) throw new Error("Knowledge turns cannot offer tools");
         agents = await this.agents();
       } catch {
         /* Ordinary answers and an explicitly unassigned proposal remain possible. */
       }
-      const offered = (await this.automations?.offered(owner)) ?? [];
+      const offered = scope
+        ? []
+        : ((await this.automations?.offered(owner)) ?? []);
+      const grounding: Grounding = {
+        status: scope ? "unavailable" : "off",
+        scope,
+        passages: [],
+        cited: [],
+      };
+      if (scope && this.knowledge) {
+        try {
+          grounding.passages = await this.knowledge.search(owner, scope, text);
+          grounding.status = grounding.passages.length ? "used" : "empty";
+        } catch {
+          /* Ordinary guidance remains available; never claim retrieval worked. */
+        }
+      }
       const result = await this.gateway.complete(
         messages,
         agents,
         signal,
         offered,
+        scope ? grounding : undefined,
       );
       const reply = replySchema.parse(result.reply);
+      if (scope && reply.kind !== "answer" && reply.kind !== "memory")
+        throw new IntegrationError("malformed");
+      // Citation targets come exclusively from server-retrieved records. Unknown
+      // labels are neutralized, never interpreted as paths or model URLs.
+      const content = reply.reply.replace(/\[S[^\]\n]*\]/g, (label) => {
+        const key = label.slice(1, -1);
+        if (!grounding.passages.some((p) => p.citation === key))
+          return "[šaltinis nepatvirtintas]";
+        if (!grounding.cited.includes(key)) grounding.cited.push(key);
+        return label;
+      });
+      if (grounding.status === "used" && !grounding.cited.length)
+        grounding.status = "uncited";
+      const messageId = randomUUID();
       const automation =
         reply.kind === "automation" &&
         this.automations &&
@@ -92,13 +135,14 @@ export class OrchestrationService {
         );
         if (!current.rows.length) return;
         await tx.query(
-          "INSERT INTO messages(id,conversation_id,turn_id,role,content,usage) VALUES($1,$2,$3,'assistant',$4,$5)",
+          "INSERT INTO messages(id,conversation_id,turn_id,role,content,usage,grounding) VALUES($1,$2,$3,'assistant',$4,$5,$6)",
           [
-            randomUUID(),
+            messageId,
             conversationId,
             turn.id,
-            reply.reply,
+            content,
             result.usage ? JSON.stringify(result.usage) : null,
+            JSON.stringify(grounding),
           ],
         );
         if (reply.kind === "plan") {
@@ -134,6 +178,31 @@ export class OrchestrationService {
             turn.id,
           );
       });
+      if (reply.kind === "memory") {
+        try {
+          if (!scope || !this.knowledge) throw new Error();
+          await this.knowledge.propose(owner, {
+            projectId: scope.projectId,
+            ...reply.memory,
+            source: { type: "message", id: messageId },
+          });
+          await this.store.db.query(
+            "UPDATE messages SET content=content || $2 WHERE id=$1",
+            [
+              messageId,
+              "\n\nAtminties pasiūlymas laukia jūsų peržiūros skiltyje „Žinios“. Jis dar nėra patvirtinta atmintis.",
+            ],
+          );
+        } catch {
+          await this.store.db.query(
+            "UPDATE messages SET content=content || $2 WHERE id=$1",
+            [
+              messageId,
+              "\n\nAtmintis neišsaugota. Pasirinkite aiškią projekto aprėptį ir pateikite pasiūlymą peržiūrai skiltyje „Žinios“; patikrinkite pasikartojimus ar konfliktus.",
+            ],
+          );
+        }
+      }
       await this.store.recordCheck("nexos", null);
     } catch (error) {
       const code = error instanceof IntegrationError ? error.code : "provider";

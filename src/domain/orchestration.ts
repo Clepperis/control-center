@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { automationProposalSchema } from "./automations";
+import {
+  memorySuggestion,
+  type Grounding,
+  type KnowledgeScope,
+} from "./knowledge";
 export const planSchema = z
   .object({
     objective: z.string().min(1).max(1000),
@@ -12,6 +17,13 @@ export const planSchema = z
   .strict();
 export type Plan = z.infer<typeof planSchema> & { agentName?: string };
 export const replySchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      kind: z.literal("memory"),
+      reply: z.string().min(1).max(3000),
+      memory: memorySuggestion,
+    })
+    .strict(),
   z
     .object({
       kind: z.literal("automation"),
@@ -73,6 +85,8 @@ export interface Message {
   content: string;
   createdAt: string;
   usage: Usage | null;
+  grounding?: Grounding | null;
+  scope?: KnowledgeScope | null;
 }
 export interface Conversation {
   id: string;

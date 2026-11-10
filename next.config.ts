@@ -1,8 +1,25 @@
 import type { NextConfig } from "next";
 const config: NextConfig = {
+  // Synthetic UI tests can run beside the owner's normal development server.
+  distDir:
+    process.env.CONTROL_CENTER_TEST_DIST === "true"
+      ? ".local/next-synthetic"
+      : ".next",
   output: "standalone",
   poweredByHeader: false,
   serverExternalPackages: ["pg"],
+  // Local secrets/research/test data never belong in a standalone artifact.
+  outputFileTracingExcludes: {
+    "/*": [
+      "./.env*",
+      "./*AUDIT*.md",
+      "./audit/**/*",
+      "./private/**/*",
+      "./.local/**/*",
+      "./.data/**/*",
+      "./*.log",
+    ],
+  },
   async headers() {
     return [
       {

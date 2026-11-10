@@ -18,6 +18,7 @@
     "test:ui:live": "tsx scripts/verify-live-ui.ts",
     "db:migrate": "tsx --env-file=.env.local scripts/migrate.ts",
     "worker": "tsx --env-file=.env.local scripts/worker.ts",
+    "knowledge:index": "tsx --env-file=.env.local scripts/knowledge-index.ts",
     "verify:connections": "tsx --env-file=.env.local scripts/verify-connections.ts",
     "verify:n8n": "tsx --env-file=.env.local scripts/verify-n8n.ts",
     "test:boundary": "tsx scripts/verify-boundary.ts",
