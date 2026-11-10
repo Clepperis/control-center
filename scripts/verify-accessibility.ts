@@ -23,6 +23,7 @@ try {
       "/knowledge",
       "/improve",
       "/settings",
+      "/statistics",
     ]) {
       await page.goto(base + route);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -124,7 +125,7 @@ try {
     "See .local/phase-2-5/accessibility.json for automated findings",
   ).toEqual([]);
   console.log(
-    "Accessibility verified: 8 demo routes at 1440/1024/390px, AA scans, keyboard skip link, dialog focus/trap/return, removed-trigger focus fallback, mobile drawer and reduced motion. Automated checks are not a full screen-reader audit.",
+    "Accessibility verified: 9 demo routes at 1440/1024/390px, AA scans, keyboard skip link, dialog focus/trap/return, removed-trigger focus fallback, mobile drawer and reduced motion. Automated checks are not a full screen-reader audit.",
   );
 } finally {
   await browser.close();

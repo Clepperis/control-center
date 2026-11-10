@@ -134,6 +134,13 @@ Each slice is a separate branch/PR with tests; live switches stay off.
    application, so only provider-reported tokens/credits after the call are
    shown. Existing plan/automation/memory confirmation cards are unchanged.
 4. **Statistika page.** Read-only aggregation over slice 1 data.
+   _Implemented on `claude/phase-7-statistics`:_ `/statistics` page and nav
+   entry; `src/server/observability/stats.ts` aggregates the last 30 days (1–90
+   allowed) of `model_usage` into totals plus per-source, per-model (top 20)
+   and per-UTC-day tables of calls, errors, tokens and nexos credits. Server
+   rendered behind `requireOwner`; no API route. Demo mode and a missing
+   database/migration show an explicit "unavailable" notice, never zeros.
+   Turn/run failure statistics beyond model calls are not included.
 5. **Paperclip task-level proposals.** Goal/budget/target fields, status and
    approval display. Requires verified application credentials first.
 6. **n8n authoring capability check.** Read-only `tools/list` probe with the

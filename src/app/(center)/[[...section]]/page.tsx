@@ -7,7 +7,10 @@ import {
   LiveAgents,
   RunFeed,
 } from "@/components/live-workspace";
-import { setupStatus } from "@/server/runtime";
+import { setupStatus, getStore } from "@/server/runtime";
+import { usageStatistics } from "@/server/observability/stats";
+import { logEvent } from "@/server/observability/log";
+import { UsageStatisticsView } from "@/components/statistics";
 import { AutomationWorkspace } from "@/components/automations";
 import { ImprovementWorkspace } from "@/components/improvements";
 import {
@@ -23,6 +26,17 @@ import {
   Knowledge,
   Settings,
 } from "@/components/secondary-pages";
+async function liveStatistics() {
+  try {
+    return await usageStatistics(getStore().db, 30);
+  } catch (error) {
+    // Missing migration/database is shown as unavailable, never as zero usage.
+    logEvent("stats.unavailable", {
+      reason: error instanceof Error ? error.name : "unexpected",
+    });
+    return null;
+  }
+}
 export default async function Page({
   params,
 }: {
@@ -45,6 +59,8 @@ export default async function Page({
     if (section[0] === "chat") return <LiveChat setup={setupStatus()} />;
     if (section[0] === "agents") return <LiveAgents />;
     if (section[0] === "knowledge") return <KnowledgeWorkspace />;
+    if (section[0] === "statistics")
+      return <UsageStatisticsView stats={await liveStatistics()} />;
     if (section[0] === "projects")
       return (
         <>
@@ -81,6 +97,8 @@ export default async function Page({
       return <ImprovementWorkspace live={data.mode === "live"} />;
     case "settings":
       return <Settings data={data} authMode={session.mode} />;
+    case "statistics":
+      return <UsageStatisticsView stats={null} />;
     default:
       notFound();
   }
