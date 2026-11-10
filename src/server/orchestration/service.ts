@@ -10,6 +10,7 @@ import type { PlanningGateway } from "@/integrations/nexos";
 import type { DelegationAdapter } from "@/integrations/paperclip";
 import { IntegrationError } from "@/integrations/errors";
 import { Store, DomainError, digest, marker, toRun } from "./store";
+import type { AutomationService } from "../automations/service";
 
 export class OrchestrationService {
   constructor(
@@ -17,6 +18,7 @@ export class OrchestrationService {
     private gateway: PlanningGateway,
     private paperclip: DelegationAdapter,
     private delegationEnabled: boolean,
+    private automations?: AutomationService,
   ) {}
   async agents(): Promise<Agent[]> {
     try {
@@ -57,8 +59,26 @@ export class OrchestrationService {
       } catch {
         /* Ordinary answers and an explicitly unassigned proposal remain possible. */
       }
-      const result = await this.gateway.complete(messages, agents, signal);
+      const offered = (await this.automations?.offered(owner)) ?? [];
+      const result = await this.gateway.complete(
+        messages,
+        agents,
+        signal,
+        offered,
+      );
       const reply = replySchema.parse(result.reply);
+      const automation =
+        reply.kind === "automation" &&
+        this.automations &&
+        offered.some((a) => a.key === reply.automation.key)
+          ? await this.automations.prepare(
+              owner,
+              reply.automation.key,
+              reply.automation.input,
+            )
+          : null;
+      if (reply.kind === "automation" && !automation)
+        throw new IntegrationError("malformed");
       if (
         reply.kind === "plan" &&
         reply.plan.agentId &&
@@ -104,6 +124,15 @@ export class OrchestrationService {
             ],
           );
         }
+        if (automation)
+          await this.automations!.persistProposal(
+            tx,
+            owner,
+            turn.id,
+            automation,
+            conversationId,
+            turn.id,
+          );
       });
       await this.store.recordCheck("nexos", null);
     } catch (error) {

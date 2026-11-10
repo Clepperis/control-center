@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { api } from "@/server/http";
-import { getStore, taskUrl } from "@/server/runtime";
+import { getStore, taskUrl, getAutomationService } from "@/server/runtime";
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -10,6 +10,7 @@ export async function GET(
     const snapshot = await getStore().snapshot(owner, id);
     return {
       ...snapshot,
+      automationRuns: await getAutomationService().list(owner, id),
       runs: snapshot.runs.map((run) => ({
         ...run,
         taskUrl: run.result?.identifier ? taskUrl(run.result.identifier) : null,

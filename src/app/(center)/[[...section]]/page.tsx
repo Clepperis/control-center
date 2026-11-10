@@ -8,13 +8,13 @@ import {
   RunFeed,
 } from "@/components/live-workspace";
 import { setupStatus } from "@/server/runtime";
+import { AutomationWorkspace } from "@/components/automations";
 import { PageHeading } from "@/components/dashboard";
 import { Overview } from "@/components/dashboard";
 import {
   DemoChat,
   Projects,
   Agents,
-  Automations,
   Knowledge,
   Improve,
   Settings,
@@ -68,7 +68,7 @@ export default async function Page({
     case "agents":
       return <Agents data={data} />;
     case "automations":
-      return <Automations />;
+      return <AutomationWorkspace live={data.mode === "live"} />;
     case "knowledge":
       return <Knowledge demo={data.mode === "demo"} />;
     case "improve":

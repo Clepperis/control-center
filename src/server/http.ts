@@ -5,6 +5,7 @@ import { AccessError } from "./auth/policy";
 import { DomainError } from "./orchestration/store";
 import { IntegrationError } from "@/integrations/errors";
 import { errorLabels } from "@/domain/orchestration";
+import { automationErrors } from "@/domain/automations";
 export async function readJson(request: Request) {
   const origin = process.env.APP_ORIGIN;
   if (!origin || request.headers.get("origin") !== origin)
@@ -65,7 +66,12 @@ export async function api(fn: (owner: string) => Promise<unknown>) {
         origin: "Užklausos kilmė neleidžiama.",
       };
       return Response.json(
-        { error: labels[error.code] ?? "Užklausa netinkama." },
+        {
+          error:
+            labels[error.code] ??
+            automationErrors[error.code] ??
+            "Užklausa netinkama.",
+        },
         { status: error.status },
       );
     }

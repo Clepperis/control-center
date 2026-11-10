@@ -2,7 +2,17 @@ import "server-only";
 import { demoDashboard } from "./demo";
 import type { Dashboard } from "@/domain/models";
 import { requireOwner } from "@/server/auth/session";
-import { getStore, setupStatus, taskUrl } from "@/server/runtime";
+import {
+  getStore,
+  setupStatus,
+  taskUrl,
+  getAutomationService,
+} from "@/server/runtime";
+import {
+  automationErrors,
+  type AutomationRun,
+  type AutomationCatalog,
+} from "@/domain/automations";
 import { toRun } from "@/server/orchestration/store";
 import { isStale } from "@/domain/orchestration";
 
@@ -48,6 +58,8 @@ export async function getLiveWorkspace() {
   let runs: ReturnType<typeof toRun>[] = [];
   let error: string | undefined;
   let checks: Record<string, unknown>[] = [];
+  let automationRuns: AutomationRun[] = [];
+  let automationCatalog: AutomationCatalog | null = null;
   try {
     const store = getStore();
     runs = (
@@ -57,6 +69,9 @@ export async function getLiveWorkspace() {
       )
     ).rows.map(toRun);
     checks = (await store.db.query("SELECT * FROM connection_checks")).rows;
+    const automations = getAutomationService();
+    automationRuns = await automations.list(owner.subject);
+    automationCatalog = await automations.catalog(owner.subject);
     data.activity = (
       await store.db.query(
         "SELECT m.id,m.role,m.content,m.created_at FROM messages m JOIN conversations c ON c.id=m.conversation_id WHERE c.owner_subject=$1 ORDER BY m.created_at DESC LIMIT 5",
@@ -118,7 +133,7 @@ export async function getLiveWorkspace() {
       purpose: "Automatizacijos",
       state: {
         kind: "disconnected",
-        detail: "Integracija numatyta kitam etapui.",
+        detail: "Programos n8n prieiga nepatikrinta.",
       },
     },
     {
@@ -131,6 +146,29 @@ export async function getLiveWorkspace() {
       },
     },
   );
+  const n8n = data.connections.find((c) => c.id === "n8n")!;
+  if (automationCatalog)
+    n8n.state =
+      automationCatalog.state === "connected" && automationCatalog.syncedAt
+        ? {
+            kind: "verified",
+            checkedAt: automationCatalog.syncedAt,
+            detail:
+              "Programos katalogo skaitymas patikrintas; tai nėra vykdymo sėkmės patvirtinimas.",
+          }
+        : {
+            kind:
+              automationCatalog.state === "not_configured" ||
+              automationCatalog.state === "configured"
+                ? "disconnected"
+                : "unavailable",
+            detail:
+              automationCatalog.state === "stale"
+                ? "Katalogo patikra pasenusi."
+                : (automationErrors[
+                    automationCatalog.errorCode ?? "not_configured"
+                  ] ?? "Reikia patikrinti programos n8n prieigą."),
+          };
   return {
     data,
     runs: runs.map((r) => ({
@@ -138,5 +176,7 @@ export async function getLiveWorkspace() {
       taskUrl: r.result?.identifier ? taskUrl(r.result.identifier) : null,
     })),
     error,
+    automationRuns,
+    automationEnabled: automationCatalog?.executionEnabled ?? false,
   };
 }

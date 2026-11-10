@@ -52,6 +52,7 @@ for (const { mode, nodeEnv } of [
     for (const path of [
       "/api/workspace",
       "/api/agents",
+      "/api/automations",
       "/api/conversations/22222222-2222-4222-8222-222222222222",
     ]) {
       const response = await fetch(base + path);
@@ -63,6 +64,17 @@ for (const { mode, nodeEnv } of [
       body: JSON.stringify({}),
     });
     assert.equal(mutation.status, mode === "development" ? 503 : 401);
+    for (const path of [
+      "/api/automations",
+      "/api/automations/22222222-2222-4222-8222-222222222222",
+    ]) {
+      const response = await fetch(base + path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Origin: base },
+        body: JSON.stringify({ action: "confirm", actionHash: "0".repeat(64) }),
+      });
+      assert.equal(response.status, mode === "development" ? 503 : 401);
+    }
     console.log(
       `Production artifact verified for AUTH_MODE=${mode}, NODE_ENV=${nodeEnv}: pages expose setup only; API reads and mutations deny access.`,
     );

@@ -19,11 +19,13 @@
     "db:migrate": "tsx --env-file=.env.local scripts/migrate.ts",
     "worker": "tsx --env-file=.env.local scripts/worker.ts",
     "verify:connections": "tsx --env-file=.env.local scripts/verify-connections.ts",
+    "verify:n8n": "tsx --env-file=.env.local scripts/verify-n8n.ts",
     "test:boundary": "tsx scripts/verify-boundary.ts",
     "format:check": "prettier --check src scripts tests docs README.md db/README.md"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
+    "@modelcontextprotocol/client": "^2.4.0",
     "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-dialog": "^1.1.15",
     "jose": "^6.1.3",

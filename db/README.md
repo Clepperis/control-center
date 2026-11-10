@@ -4,6 +4,8 @@
 
 Use separate migration/runtime database roles in production. Tests run these migrations in PGlite, including on-disk reopening. A conventional PostgreSQL server still needs live setup verification.
 
+`003_automations.sql` adds owner-scoped n8n catalog snapshots and immutable execution requests, exact confirmation digests/expiry, external execution links, bounded results and reconciliation leases. It stores application projections only; n8n owns the actual execution lifecycle and retention. Unknown submissions are recovered by reads, never replayed. Credentials remain in server configuration, outside these tables.
+
 Versioned SQL migrations are the schema source. Never write to Paperclip or n8n internal databases. The UI demo requires no database.
 
 `001_foundation.sql` defines local projects and a derived knowledge search index. Future operational records must reference external task IDs rather than duplicate Paperclip's task lifecycle. The index is not a knowledge authority. Use `simple` text search initially and evaluate Lithuanian/English queries before adding semantic search.

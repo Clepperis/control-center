@@ -1,4 +1,5 @@
-import type { Agent, ConnectionState } from "@/domain/models";
+import type { Agent } from "@/domain/models";
+import type { AutomationContract, CatalogWorkflow } from "@/domain/automations";
 // Domain-facing contracts, not speculative external API payloads.
 export interface PaperclipAdapter {
   listAgents(signal?: AbortSignal): Promise<Agent[]>;
@@ -19,13 +20,44 @@ export interface ExternalTask {
   assigneeAgentId: string | null;
 }
 export interface AutomationAdapter {
-  connection(): Promise<ConnectionState>;
-  // Workflow execution and schedules remain owned by n8n.
+  listWorkflows(): Promise<{
+    workflows: CatalogWorkflow[];
+    truncated: boolean;
+  }>;
+  verifyContract(contract: AutomationContract): Promise<void>;
+  execute(
+    contract: AutomationContract,
+    requestId: string,
+    text: string,
+  ): Promise<{ id: string | null; rejected: boolean }>;
+  readExecution(
+    workflowId: string,
+    id: string,
+    data?: boolean,
+  ): Promise<AutomationExecution>;
+  findExecutions(
+    workflowId: string,
+    startedAfter: string,
+  ): Promise<{ ids: string[]; complete: boolean }>;
+  workflowUrl(id: string): string;
+  executionUrl(workflowId: string, id: string): string;
+}
+export interface AutomationExecution {
+  id: string;
+  workflowId: string;
+  status: string;
+  mode: string;
+  startedAt: string | null;
+  stoppedAt: string | null;
+  waitTill: string | null;
+  correlation: { requestId: string; text: string } | null;
+  result: { requestId: string; transformedText: string } | null;
 }
 export interface ModelGateway {
   complete(
     messages: { role: "user" | "assistant"; content: string }[],
     agents: Agent[],
     signal?: AbortSignal,
+    automations?: AutomationContract[],
   ): Promise<unknown>;
 }

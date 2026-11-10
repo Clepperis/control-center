@@ -1,6 +1,6 @@
 # Personal AI Control Center
 
-A self-hostable AI workspace for one owner. The interface is Lithuanian; code and developer documentation are English. Phase 1 provides a polished demo. Phase 2 adds durable conversations and owner-confirmed delegation. Live account verification remains pending.
+A self-hostable AI workspace for one owner. The interface is Lithuanian; code and developer documentation are English. Phase 1 provides a polished demo. Phase 2 adds durable conversations and owner-confirmed delegation. Phase 3 adds curated, owner-confirmed n8n automation with durable execution visibility. Live account execution verification remains pending.
 
 ## Local demo
 
@@ -35,6 +35,7 @@ The live UI identifies missing setup and never substitutes demo data. Read [inte
 | `npm run db:migrate`                 | Explicit, checksum-checked PostgreSQL migrations                                      |
 | `npm run worker`                     | Bounded reconciliation and interrupted-turn recovery; no model calls or task creation |
 | `npm run verify:connections`         | Explicit read-only operator/model-catalog probes                                      |
+| `npm run verify:n8n`                 | Redacted, read-only application n8n catalog/contract probe                            |
 | `npm run lint` / `npm run typecheck` | ESLint / TypeScript                                                                   |
 | `npm test`                           | PostgreSQL-engine, adapter, state machine and authentication tests                    |
 | `npm run test:ui`                    | Demo interactions against a running dev server                                        |
@@ -48,5 +49,7 @@ Browser tests use installed Chrome (`BROWSER_CHANNEL=msedge` selects Edge). Gene
 The interface uses a compact Linear-inspired dark workspace, with locally bundled Inter, neutral surfaces and grouped work lists. See [design decisions and reference use](docs/DESIGN.md). `npm run test:a11y` checks all pages at 1440/1024/390px, AA rules and keyboard behavior against the running demo server.
 
 Production requires a trusted OIDC login/session proxy plus independent signed-JWT owner verification. A production build alone is not deployment readiness. No deployment or remote infrastructure changes are included.
+
+For n8n, follow [Phase 3 configuration and the explicit live-test gate](docs/PHASE-3.md). It uses a separate application MCP token and migration 003. Keep `N8N_EXECUTION_ENABLED=false` until the exact live test is approved. The dedicated example remains an unpublished draft; existing business workflows are never executable automatically. Knowledge and project memory are next.
 
 Read [architecture](docs/ARCHITECTURE.md), [validation](docs/VALIDATION.md) and [roadmap](docs/ROADMAP.md) before future work. Keep the full local audit, private infrastructure addresses, personal data, vault and credentials out of this public repository.

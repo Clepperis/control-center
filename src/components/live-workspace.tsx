@@ -31,11 +31,14 @@ import {
 import { PageHeading, WorkspaceStatus, RecentActivity } from "./dashboard";
 import { Badge, EmptyState, SectionTitle } from "./ui";
 import type { Agent, Dashboard } from "@/domain/models";
+import type { AutomationRun } from "@/domain/automations";
+import { AutomationFeed } from "./automations";
 export interface Setup {
   database: boolean;
   model: string;
   paperclip: string;
   modelEnabled: boolean;
+  n8nExecutionEnabled?: boolean;
 }
 export type DisplayRun = Run & { taskUrl?: string | null };
 export interface Snapshot {
@@ -43,6 +46,7 @@ export interface Snapshot {
   messages: Message[];
   runs: DisplayRun[];
   turns: Turn[];
+  automationRuns?: AutomationRun[];
 }
 async function request<T>(
   url: string,
@@ -382,10 +386,14 @@ export function LiveOverview({
   data,
   runs,
   error,
+  automationRuns = [],
+  automationEnabled = false,
 }: {
   data: Dashboard;
   runs: DisplayRun[];
   error?: string;
+  automationRuns?: AutomationRun[];
+  automationEnabled?: boolean;
 }) {
   const router = useRouter();
   useEffect(() => {
@@ -464,6 +472,9 @@ export function LiveOverview({
               </div>
             )}
           </section>
+          {!!automationRuns.length && (
+            <AutomationFeed runs={automationRuns} enabled={automationEnabled} />
+          )}
           <RecentActivity activity={data.activity} error={error} />
         </div>
         <WorkspaceStatus data={data} />
@@ -693,11 +704,22 @@ export function LiveChat({ setup }: { setup: Setup }) {
                 </p>
               ))}
             {snapshot && (
-              <section className="mt-6" aria-label="Delegavimo planai">
+              <section
+                className="mt-6"
+                aria-label="Pokalbio pasiūlymai ir vykdymai"
+              >
                 {snapshot.runs.length > 0 && (
                   <h2 className="overline mb-4">Delegavimo planai</h2>
                 )}
                 <RunFeed runs={snapshot.runs} conversation />
+                {!!snapshot.automationRuns?.length && (
+                  <div className="mt-5">
+                    <AutomationFeed
+                      runs={snapshot.automationRuns}
+                      enabled={setup.n8nExecutionEnabled}
+                    />
+                  </div>
+                )}
               </section>
             )}
           </div>

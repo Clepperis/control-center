@@ -19,4 +19,10 @@ Phase 2.5 provides a dark workspace with shared tokens, compact grouped work row
 
 Phase 2 implementation now includes durable conversations/proposals, exact confirmation, one-attempt delegation, status/results, a reconciliation worker and deterministic tests. Live end-to-end verification remains pending separate application credentials, local PostgreSQL, installed-contract checks, a ready allowed agent and explicit bounded-test approval. See [PHASE-2.md](PHASE-2.md); do not call the phase live-verified until those blockers are resolved.
 
-Connect n8n execution projections without duplicating scheduling; connect the private Markdown vault and rebuildable search; introduce isolated Improve System execution with review and production approval; then consider notifications, richer context and optional editors. Investment remains deferred.
+## Phase 3
+
+The n8n application adapter, curated catalog, immutable owner confirmations, one-attempt submission, durable execution linking and bounded recovery are implemented. Catalog and chat share the same service. A dedicated harmless draft was created and validated through development MCP; it remains unpublished and unexecuted. Application PostgreSQL/credentials, exact installed-version verification and explicit approval for a bounded live test are outstanding. See [Phase 3](PHASE-3.md); this is not a live-verified release.
+
+## Next: knowledge and project memory
+
+Connect a private Markdown source with project-scoped retrieval, provenance, reviewed writes and rebuildable search. Workflow output cannot authorize or silently become approved memory. Preserve native n8n scheduling ownership. After that, introduce isolated Improve System execution with review and production approval, then consider notifications, richer context and optional editors. Investment remains deferred.

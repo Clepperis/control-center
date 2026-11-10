@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { Database, Sql } from "../db/types";
+import { toAutomationRun } from "../automations/records";
 import type {
   Conversation,
   Message,
@@ -116,6 +117,12 @@ export class Store {
       },
       messages,
       runs,
+      automationRuns: (
+        await this.db.query(
+          "SELECT * FROM automation_requests WHERE conversation_id=$1 AND owner_subject=$2 ORDER BY created_at",
+          [conversationId, owner],
+        )
+      ).rows.map(toAutomationRun),
       turns,
     };
   }

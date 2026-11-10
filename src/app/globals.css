@@ -1486,6 +1486,87 @@ textarea.input {
     font-size: 16px;
   }
 }
+.automation-content {
+  padding: 8px;
+}
+.automation-connection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 4px 8px;
+  font-size: 11px;
+}
+.automation-catalog-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.automation-catalog-row > svg {
+  color: var(--quiet);
+  margin-top: 3px;
+}
+.automation-catalog-row h2 {
+  font-size: 12px;
+  font-weight: 500;
+}
+.automation-catalog-row p {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.automation-flags {
+  display: flex;
+  gap: 6px 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  color: var(--quiet);
+  font-size: 10px;
+}
+.automation-catalog-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.automation-input-section {
+  max-width: 760px;
+  padding: 0 8px;
+}
+.automation-input-section p {
+  font-size: 12px;
+}
+.automation-times {
+  display: flex;
+  gap: 12px 24px;
+  flex-wrap: wrap;
+  font-size: 11px;
+}
+.automation-times dt {
+  color: var(--quiet);
+  margin-bottom: 4px;
+}
+.automation-run pre {
+  font-size: 12px;
+}
+@media (max-width: 767px) {
+  .automation-catalog-row {
+    flex-wrap: wrap;
+    padding: 14px 8px;
+  }
+  .automation-catalog-actions {
+    flex-basis: 100%;
+    margin-left: 27px;
+  }
+  .automation-connection {
+    padding-inline: 0;
+    gap: 8px;
+  }
+  .automation-connection > .muted {
+    flex-basis: 100%;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

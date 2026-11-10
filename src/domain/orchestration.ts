@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { automationProposalSchema } from "./automations";
 export const planSchema = z
   .object({
     objective: z.string().min(1).max(1000),
@@ -11,6 +12,13 @@ export const planSchema = z
   .strict();
 export type Plan = z.infer<typeof planSchema> & { agentName?: string };
 export const replySchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      kind: z.literal("automation"),
+      reply: z.string().min(1).max(3000),
+      automation: automationProposalSchema,
+    })
+    .strict(),
   z
     .object({ kind: z.literal("answer"), reply: z.string().min(1).max(10000) })
     .strict(),

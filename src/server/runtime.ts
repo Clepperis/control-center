@@ -8,8 +8,14 @@ import {
   type DelegationAdapter,
 } from "@/integrations/paperclip";
 import { IntegrationError } from "@/integrations/errors";
-import { gatewayConfig, paperclipConfig, requireLiveMode } from "./config";
+import {
+  gatewayConfig,
+  paperclipConfig,
+  n8nConfig,
+  requireLiveMode,
+} from "./config";
 import type { Database } from "./db/types";
+import { configuredAutomations } from "./automations/configured";
 const globalDb = globalThis as typeof globalThis & {
   controlCenterDb?: Database;
 };
@@ -54,9 +60,17 @@ export function getService() {
     adapters.gateway,
     adapters.paperclip,
     process.env.LIVE_DELEGATION_ENABLED === "true",
+    getAutomationService(),
   );
 }
+export function getAutomationService() {
+  return configuredAutomations(getStore());
+}
 export function setupStatus() {
+  let n8nExecutionEnabled = false;
+  try {
+    n8nExecutionEnabled = n8nConfig(process.env).enabled;
+  } catch {}
   let model = "Trūksta NEXOS_API_KEY arba NEXOS_MODEL.";
   let modelEnabled = false;
   try {
@@ -83,6 +97,7 @@ export function setupStatus() {
     model,
     paperclip,
     modelEnabled,
+    n8nExecutionEnabled,
   };
 }
 export function taskUrl(id: string) {

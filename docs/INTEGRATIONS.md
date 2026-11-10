@@ -22,8 +22,14 @@ Installed-instance **development MCP** reads verified organization access, roste
 
 REST creation is not assumed idempotent. The MCP request-ID contract does not establish REST behavior. A confirmed run is claimed once in PostgreSQL and carries a stable marker. Uncertain creation is reconciled by read-only marker search plus exact title and assignee matching. Zero/multiple matches remain unresolved; there is never an automatic second POST.
 
+## n8n
+
+The application uses the official instance-level MCP interface with a separate bearer token, the current official TypeScript client, a fixed configured origin and five allowlisted tools. One curated unpublished/manual text-transform contract is implemented. Catalog discovery, strict graph/version verification, owner confirmation, durable request/execution linking, bounded status/result reads and conservative reconciliation share the existing integration and operational database boundaries.
+
+Development MCP reads and the dedicated draft's validation/readback succeeded. Application credentials and a real execution remain unverified. See the [capability matrix, setup, recovery limitations and live gate](PHASE-3.md). There is no general REST execute route, native schedule control, automatic submission retry or Paperclip wrapper.
+
 ## States and later adapters
 
 `demo`, `disconnected`, `unavailable` and `verified` are distinct. A URL is insufficient. Successful application checks have timestamps; stale results and errors remain visible. Development MCP success never marks application access verified.
 
-n8n execution/business schedules remain a later phase, with no workflow calls now. Markdown remains authoritative; no private vault is uploaded or indexed. No additional credentials are needed for those future adapters yet.
+Markdown remains authoritative; no private vault is uploaded or indexed. Knowledge and project memory are the next phase. n8n retains workflow definitions, executions and business schedules; Control Center implements only explicitly reviewed manual requests.

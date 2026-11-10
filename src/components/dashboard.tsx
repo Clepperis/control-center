@@ -72,7 +72,11 @@ export function WorkspaceStatus({ data }: { data: Dashboard }) {
           <Lightning size={18} />
           <div className="flex-1">
             <p className="text-sm">Automatizacijos</p>
-            <p className="muted text-xs mt-1">Vykdymai neįjungti</p>
+            <p className="muted text-xs mt-1">
+              {data.mode === "demo"
+                ? "Vykdymai neįjungti"
+                : "Būsena automatizacijų skiltyje"}
+            </p>
           </div>
         </div>
         <Link href="/agents" className="text-link mt-3">

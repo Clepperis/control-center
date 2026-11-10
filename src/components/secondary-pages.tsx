@@ -5,7 +5,6 @@ import {
   ArrowUpRight,
   Plus,
   BookOpen,
-  Lightning,
   ArrowRight,
   PaperPlaneTilt,
   FileText,
@@ -286,41 +285,6 @@ export function Agents({ data }: { data: Dashboard }) {
           Ryšio nustatymai
         </Link>
       </p>
-    </>
-  );
-}
-export function Automations() {
-  return (
-    <>
-      <PageHeading
-        eyebrow="Automatizacijos"
-        title="Automatizacijos"
-        description="Darbo eigas ir jų tvarkaraščius valdys n8n. Šis centras rodys jų būseną ir rezultatus."
-      />
-      <div className="panel">
-        <EmptyState
-          title="Automatizacijos dar neprijungtos"
-          icon={<Lightning size={28} />}
-        >
-          Šiame etape darbo eigos nekuriamos ir nevykdomos. n8n integracija bus
-          įgyvendinta atskirai.
-          <div className="mt-6">
-            <Link href="/settings" className="button">
-              Peržiūrėti ryšius
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-        </EmptyState>
-      </div>
-      <div className="mt-9 max-w-2xl">
-        <h2 className="font-semibold mb-3">
-          Viena darbo eiga, vienas tvarkaraštis
-        </h2>
-        <p className="muted">
-          Valdymo centras nekurs papildomų tos pačios automatizacijos grafikų.
-          Nežinomi ar pasenę vykdymo duomenys bus aiškiai pažymėti.
-        </p>
-      </div>
     </>
   );
 }

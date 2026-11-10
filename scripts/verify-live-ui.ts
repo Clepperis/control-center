@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { mkdir } from "node:fs/promises";
 import AxeBuilder from "@axe-core/playwright";
+import { verifyAutomationUi } from "./automation-ui-scenario";
 import { openTestDatabase } from "../tests/pglite";
 import { migrate } from "../src/server/db/migrate";
 import { Store } from "../src/server/orchestration/store";
@@ -134,6 +135,11 @@ const child = spawn(
       LIVE_DELEGATION_ENABLED: "false",
       NEXOS_API_KEY: "",
       PAPERCLIP_BOARD_API_KEY: "",
+      N8N_ORIGIN: "https://n8n.example",
+      N8N_MCP_TOKEN: "synthetic-application-token",
+      N8N_TEXT_WORKFLOW_ID: "synthetic-workflow",
+      N8N_TEXT_WORKFLOW_VERSION: "11111111-1111-4111-8111-111111111111",
+      N8N_EXECUTION_ENABLED: "true",
     },
   },
 );
@@ -154,6 +160,24 @@ try {
   }
   expect(ready).toBe(true);
   expect((await fetch(base + "/api/workspace")).status).toBe(503);
+  expect((await fetch(base + "/api/automations")).status).toBe(503);
+  for (const path of [
+    "/api/automations",
+    "/api/automations/22222222-2222-4222-8222-222222222222",
+  ]) {
+    expect(
+      (
+        await fetch(base + path, {
+          method: "POST",
+          headers: {
+            Origin: "https://untrusted.example",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ action: "sync" }),
+        })
+      ).status,
+    ).toBe(403);
+  }
   expect(
     (
       await fetch(base + "/api/chat", {
@@ -283,6 +307,7 @@ try {
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  await verifyAutomationUi(page, store, owner, base, captureReview);
   for (const path of [
     "",
     "chat",

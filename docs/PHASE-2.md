@@ -41,4 +41,4 @@ No live completion or agent task was executed. Minimum setup: local application 
 
 Keep live switches off for read-only probes. Then request explicit approval for one concrete test, naming synthetic input, selected ready agent, task, side effects, enforceable limits and verification. Suggested input: “Review this fictional sentence and return exactly one suggested edit; do not use external tools or change files.” Gateway output can be limited to 1,200 tokens; agent budget limits must already be enforced in Paperclip. Verify persisted approval, external ID/status/comments, repeated-confirmation deduplication and restart recovery. Without readiness or enforceable budget bounds, keep the live test blocked.
 
-After these blockers are resolved, the next product phase is n8n automation integration.
+The n8n implementation now exists separately in [Phase 3](PHASE-3.md). It does not resolve the live Phase 2 blockers above.

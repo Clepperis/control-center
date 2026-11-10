@@ -6,6 +6,7 @@ import { PaperclipClient } from "../src/integrations/paperclip";
 import { paperclipConfig, requireLiveMode } from "../src/server/config";
 import { IntegrationError } from "../src/integrations/errors";
 import type { DelegationAdapter } from "../src/integrations/paperclip";
+import { configuredAutomations } from "../src/server/automations/configured";
 requireLiveMode(process.env);
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
 const db = openPostgres(process.env.DATABASE_URL);
@@ -41,6 +42,7 @@ const service = new OrchestrationService(
   paperclip,
   false,
 );
+const automations = configuredAutomations(service.store);
 const interval = Number(process.env.RECONCILE_INTERVAL_MS ?? 30000);
 if (!Number.isFinite(interval) || interval < 5000 || interval > 300000)
   throw new Error("RECONCILE_INTERVAL_MS must be between 5000 and 300000.");
@@ -54,6 +56,7 @@ try {
   while (!controller.signal.aborted) {
     try {
       await service.tick();
+      await automations.tick();
     } catch {
       console.error(
         JSON.stringify({

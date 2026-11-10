@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { NexosGateway } from "../src/integrations/nexos";
 import { PaperclipClient } from "../src/integrations/paperclip";
 import { IntegrationError, requestJson } from "../src/integrations/errors";
+import { textContract } from "../src/domain/automations";
 import {
   gatewayConfig,
   paperclipConfig,
@@ -30,6 +31,49 @@ const json = (value: unknown, status = 200) =>
     headers: { "Content-Type": "application/json" },
   });
 describe("nexos documented transport with deterministic HTTP substitutes", () => {
+  it.each([false, true])(
+    "accepts an automation proposal only with a server-approved offer (%s), without exposing native IDs",
+    async (approved) => {
+      const automation = textContract(
+        "private-native-workflow",
+        "11111111-1111-4111-8111-111111111111",
+      );
+      const f = vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(json({ data: [{ id: config.model }] }))
+        .mockResolvedValueOnce(
+          json({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: {
+                  content: JSON.stringify({
+                    kind: "automation",
+                    reply: "Siūlau patikrai.",
+                    automation: {
+                      key: automation.key,
+                      input: { text: "labas" },
+                    },
+                  }),
+                },
+              },
+            ],
+          }),
+        );
+      const call = new NexosGateway(config, f).complete(
+        [{ role: "user", content: "Synthetic automation request" }],
+        [],
+        undefined,
+        approved ? [automation] : [],
+      );
+      if (approved)
+        await expect(call).resolves.toMatchObject({
+          reply: { kind: "automation" },
+        });
+      else await expect(call).rejects.toMatchObject({ code: "malformed" });
+      expect(f.mock.calls[1][1]?.body).not.toContain("private-native-workflow");
+    },
+  );
   it("uses only the fixed gateway and configured model, bounds output and normalizes actual optional usage", async () => {
     const f = vi
       .fn<typeof fetch>()
