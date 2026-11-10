@@ -1,0 +1,26 @@
+# Private research and local infrastructure inventory
+*AUDIT*.md
+audit/
+private/
+# Secrets (only the sanitized template is published)
+.env*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+# Dependencies, local data, and generated output
+node_modules/
+.next/
+out/
+dist/
+coverage/
+playwright-report/
+test-results/
+.data/
+.local/
+*.log
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store

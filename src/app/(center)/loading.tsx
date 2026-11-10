@@ -1,0 +1,9 @@
+export default function Loading() {
+  return (
+    <div aria-label="Įkeliama" aria-busy="true" className="space-y-6">
+      <div className="skeleton h-24 w-2/3" />
+      <div className="skeleton h-64" />
+      <div className="skeleton h-40" />
+    </div>
+  );
+}

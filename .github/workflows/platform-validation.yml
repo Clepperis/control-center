@@ -1,0 +1,53 @@
+name: Platform validation
+on:
+  push:
+    branches: ['codex/**']
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AUTH_MODE: development
+      DATA_MODE: demo
+      APP_ORIGIN: http://127.0.0.1:3000
+      LIVE_MODEL_ENABLED: 'false'
+      LIVE_DELEGATION_ENABLED: 'false'
+      IMPROVEMENT_EXECUTOR_ENABLED: 'false'
+      BROWSER_CHANNEL: chromium
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Dependencies without lifecycle hooks
+        run: npm ci --ignore-scripts
+      - name: Lint
+        run: npm run lint
+      - name: Formatting
+        run: npm run format:check
+      - name: Types
+        run: npm run typecheck
+      - name: Tests
+        run: npm test
+      - name: Build
+        run: npm run build
+      # The built artifact must refuse development access and send security
+      # headers. This is the only check of the production authentication path.
+      - name: Production boundary
+        run: npm run test:boundary
+      - name: Browser dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Desktop and mobile
+        run: npm run test:ui:live
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: synthetic-browser-captures
+          path: .local/screenshots/*.png
+          retention-days: 7
