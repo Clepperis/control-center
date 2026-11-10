@@ -48,6 +48,10 @@ export interface Usage {
   outputTokens?: number;
   totalTokens?: number;
   credits?: number;
+  /** Routing facts persisted with the reply so the owner can see them. */
+  model?: string;
+  tier?: "fast" | "standard" | "strong";
+  fallback?: boolean;
 }
 export type RunState =
   | "awaiting_confirmation"

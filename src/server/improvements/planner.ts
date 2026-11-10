@@ -47,15 +47,25 @@ export class NexosPlatformPlanner implements PlatformPlanner {
     investigate: boolean,
   ) {
     if (!this.config.enabled) throw new IntegrationError("disabled");
-    await new NexosGateway(this.config, this.fetcher).check();
+    const route = await new NexosGateway(this.config, this.fetcher).resolve(
+      "improvement",
+    );
     return trackModelCall(
       this.usageSink,
-      { source: "improvement", model: this.config.model },
+      { source: "improvement", model: route.model },
       (report) =>
-        this.request(request, context, knowledge, investigate, report),
+        this.request(
+          route.model,
+          request,
+          context,
+          knowledge,
+          investigate,
+          report,
+        ),
     );
   }
   private async request(
+    model: string,
     request: Improvement,
     context: RepositoryContext | null,
     knowledge: Passage[],
@@ -72,7 +82,7 @@ export class NexosPlatformPlanner implements PlatformPlanner {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: this.config.model,
+          model,
           store: false,
           stream: false,
           n: 1,
