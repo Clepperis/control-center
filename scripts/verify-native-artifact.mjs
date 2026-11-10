@@ -22,7 +22,7 @@ await verifyRelease(
   "runtime",
 );
 const node = join(stage, "bin/node");
-const db = new pg.Pool({ connectionString: fixture.env.DATABASE_URL });
+const db = new pg.Pool({ connectionString: fixture.adminDatabaseUrl });
 let web, worker;
 const logs = [];
 function start(script, extra = {}) {
@@ -49,6 +49,7 @@ function start(script, extra = {}) {
       "APP_ORIGIN",
     ])
       delete env[key];
+  if (script.includes("worker")) env.DATABASE_URL = fixture.workerDatabaseUrl;
   const child = spawn(node, [join(stage, script)], {
     cwd: stage,
     env,
@@ -104,17 +105,31 @@ try {
     (await fetch("http://127.0.0.1:3210/api/workspace")).status,
     401,
   );
-  const login = await fetch("http://127.0.0.1:3210/api/auth/sign-in/email", {
-    method: "POST",
-    headers: {
-      Origin: fixture.env.APP_ORIGIN,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      email: "owner@example.com",
-      password: "Synthetic native long passphrase",
-    }),
-  });
+  const loginRequest = () =>
+    fetch("http://127.0.0.1:3210/api/auth/sign-in/email", {
+      method: "POST",
+      headers: {
+        Origin: fixture.env.APP_ORIGIN,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: "owner@example.com",
+        password: "Synthetic native long passphrase",
+      }),
+    });
+  const resetLock = await db.connect();
+  try {
+    await resetLock.query("SELECT pg_advisory_lock(718236)");
+    assert.equal(
+      (await loginRequest()).status,
+      429,
+      "Native reset/login lock must fence a concurrent sign-in",
+    );
+  } finally {
+    await resetLock.query("SELECT pg_advisory_unlock(718236)");
+    resetLock.release();
+  }
+  const login = await loginRequest();
   assert.equal(login.status, 200);
   const cookie = login.headers
     .getSetCookie()
@@ -163,6 +178,8 @@ try {
     passwordLogin: true,
     persistence: true,
     workerRestart: true,
+    runtimeRoles: true,
+    loginResetLock: true,
   };
   await writeFile(
     ".local/phase-6/native-artifact.json",

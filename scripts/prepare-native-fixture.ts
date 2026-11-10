@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -51,10 +51,55 @@ try {
     hash: doc.hash,
     body: "Restoration preserves the updated synthetic document and its previous revision.",
   });
+  // Actual runtime-role checks use the shipped grants, not a superuser facade.
+  await db.query(
+    "CREATE ROLE cc_web LOGIN PASSWORD 'synthetic-web-only'; CREATE ROLE cc_worker LOGIN PASSWORD 'synthetic-worker-only'",
+  );
+  const grants = (await readFile("ops/postgres/roles.sql", "utf8"))
+    .replaceAll(':"runtime_role"', '"cc_web"')
+    .replaceAll(':"worker_role"', '"cc_worker"');
+  await db.query(grants);
+  const webUrl = new URL(url);
+  webUrl.username = "cc_web";
+  webUrl.password = "synthetic-web-only";
+  const workerUrl = new URL(url);
+  workerUrl.username = "cc_worker";
+  workerUrl.password = "synthetic-worker-only";
+  const runtimeDb = openPostgres(webUrl.href),
+    workerDb = openPostgres(workerUrl.href);
+  try {
+    await assert.rejects(
+      runtimeDb.query("UPDATE auth_account SET password='forbidden'"),
+      /permission denied/,
+    );
+    await assert.rejects(
+      runtimeDb.query(
+        "INSERT INTO auth_user(id,name,email) VALUES('other','Other','other@example.com')",
+      ),
+      /permission denied/,
+    );
+    await assert.rejects(
+      workerDb.query("SELECT * FROM auth_account"),
+      /permission denied/,
+    );
+    await assert.rejects(
+      runtimeDb.query("CREATE TABLE forbidden_schema_write(id integer)"),
+      /permission denied/,
+    );
+  } finally {
+    await runtimeDb.close();
+    await workerDb.close();
+  }
+  env.DATABASE_URL = webUrl.href;
   await mkdir(".local/phase-6", { recursive: true });
   await writeFile(
     ".local/phase-6/native-fixture.json",
-    JSON.stringify({ env, knowledge }),
+    JSON.stringify({
+      env,
+      knowledge,
+      workerDatabaseUrl: workerUrl.href,
+      adminDatabaseUrl: url.href,
+    }),
     { mode: 0o600 },
   );
   console.log(

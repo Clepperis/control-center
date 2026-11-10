@@ -61,7 +61,10 @@ if (process.env.BACKUP_TEST_POSTGRES === "true") {
   ));
   const releases = join(root, "releases");
   await mkdir(releases);
-  await cp(stage, join(releases, release.commit), { recursive: true });
+  await cp(stage, join(releases, release.commit), {
+    recursive: true,
+    verbatimSymlinks: true,
+  });
   await encrypt(root, id, config);
   const restored = await restore(
     root,

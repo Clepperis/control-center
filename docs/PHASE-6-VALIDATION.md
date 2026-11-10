@@ -67,6 +67,12 @@ after rclone encryption/decryption into a separate disposable database. The
 systemd quiescence observation is substituted only for the static synthetic backup
 fixture; dump, crypt and restore tools are real. No Google upload occurs.
 
+Native fixture checks also apply the shipped runtime/worker SQL grants, prove
+account/password/schema-write denial, run each process with its respective role
+and check PostgreSQL's real reset/login advisory lock. The first native packaging
+run correctly rejected an escaping link caused by Node's default copy behavior;
+release copies now preserve relative links and still reject escaping targets.
+
 The final pushed commit's CI outcome and downloadable artifact identity must be
 checked separately. Do not infer a successful native run merely from this workflow
 definition. CI artifacts include sanitized native/backup result JSON alongside

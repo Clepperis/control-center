@@ -29,7 +29,10 @@ const directory = resolve(".local/releases", commit);
 await mkdir(directory, { recursive: true, mode: 0o700 });
 const stage = join(directory, "runtime");
 await mkdir(stage); // exclusive: retain previous artifacts and failure evidence.
-await cp(".next/standalone", stage, { recursive: true });
+await cp(".next/standalone", stage, {
+  recursive: true,
+  verbatimSymlinks: true,
+});
 await cp(".next/static", join(stage, ".next/static"), { recursive: true });
 for (const name of ["package.json", "package-lock.json"])
   await cp(name, join(stage, name));
@@ -60,6 +63,10 @@ async function walk(dir) {
       const link = await readlink(file),
         target = resolve(dir, link),
         r = relative(stage, target);
+      if (isAbsolute(link) || r.startsWith("..") || isAbsolute(r))
+        console.error(
+          JSON.stringify({ event: "artifact_link_refused", path: rel }),
+        );
       requireValue(
         !isAbsolute(link) && !r.startsWith("..") && !isAbsolute(r),
         "external_artifact_link",
