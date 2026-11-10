@@ -43,11 +43,16 @@ jobs:
         run: npm run test:password:ui
       - name: Desktop and mobile
         run: npm run test:ui:live
+      - name: Chat composer keyboard and responsive behavior
+        run: npm run test:chat:ui
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: synthetic-browser-captures
-          path: .local/screenshots/*.png
+          path: |
+            .local/screenshots/*.png
+            .local/chat-composer/after-*.png
+            .local/chat-composer/verification.json
           retention-days: 7
   arm64-release:
     # Public repository, free standard native ARM64 runner. Never deploys.

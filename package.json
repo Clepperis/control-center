@@ -16,6 +16,7 @@
     "test:ui": "tsx scripts/verify-ui.ts",
     "test:a11y": "tsx scripts/verify-accessibility.ts",
     "test:ui:live": "tsx scripts/verify-live-ui.ts",
+    "test:chat:ui": "tsx scripts/verify-chat-composer.ts",
     "db:migrate": "tsx --env-file=.env.local scripts/migrate.ts",
     "worker": "tsx --env-file=.env.local scripts/worker.ts",
     "knowledge:index": "tsx --env-file=.env.local scripts/knowledge-index.ts",

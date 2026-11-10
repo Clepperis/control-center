@@ -12,7 +12,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   ChatCircle,
-  PaperPlaneTilt,
+  ArrowUp,
   Plus,
   ArrowClockwise,
   WarningCircle,
@@ -503,6 +503,13 @@ export function LiveChat({ setup }: { setup: Setup }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const inflight = useRef<AbortController | null>(null);
+  const messageField = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    const field = messageField.current;
+    if (!field) return;
+    field.style.height = "auto";
+    field.style.height = `${Math.min(field.scrollHeight, 200)}px`;
+  }, [text]);
   const [attempt, setAttempt] = useState<{
     conversationId: string;
     requestId: string;
@@ -605,6 +612,12 @@ export function LiveChat({ setup }: { setup: Setup }) {
     }
   }
   const pending = snapshot?.turns.some((t) => t.status === "pending");
+  const composerDisabled =
+    busy || !!pending || !!attempt || !setup.database || !setup.modelEnabled;
+  const canSend =
+    !composerDisabled &&
+    !!text.trim() &&
+    (!useKnowledge || !!projectId || includeGlobal);
   function choose(id: string | null) {
     if (busy || attempt) return;
     setConversationId(id);
@@ -779,18 +792,56 @@ export function LiveChat({ setup }: { setup: Setup }) {
             )}
           </div>
           <form className="chat-composer" onSubmit={send}>
-            <div className="knowledge-toolbar mb-4">
-              <label className="knowledge-check">
-                <input
-                  type="checkbox"
-                  checked={useKnowledge}
-                  disabled={busy || !!attempt}
-                  onChange={(e) => setUseKnowledge(e.target.checked)}
-                />{" "}
-                Naudoti projekto žinias
+            <div className="chat-input-surface">
+              <label htmlFor="live-message" className="sr-only">
+                Jūsų žinutė
               </label>
+              <textarea
+                ref={messageField}
+                id="live-message"
+                className="input chat-message-input"
+                rows={2}
+                maxLength={4000}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (
+                    e.key !== "Enter" ||
+                    e.shiftKey ||
+                    e.nativeEvent.isComposing ||
+                    e.nativeEvent.keyCode === 229
+                  )
+                    return;
+                  e.preventDefault();
+                  if (!e.repeat && canSend)
+                    e.currentTarget.form?.requestSubmit();
+                }}
+                placeholder="Aprašykite tikslą ir apribojimus…"
+                enterKeyHint="send"
+                disabled={composerDisabled}
+              />
+              <div className="chat-composer-toolbar">
+                <label className="knowledge-check">
+                  <input
+                    type="checkbox"
+                    checked={useKnowledge}
+                    disabled={busy || !!attempt}
+                    onChange={(e) => setUseKnowledge(e.target.checked)}
+                  />{" "}
+                  Naudoti projekto žinias
+                </label>
+                <button
+                  type="submit"
+                  className="button button-primary chat-send"
+                  disabled={!canSend}
+                  title="Siųsti modeliui"
+                >
+                  <ArrowUp size={20} weight="bold" aria-hidden="true" />
+                  <span className="sr-only">Siųsti modeliui</span>
+                </button>
+              </div>
               {useKnowledge && (
-                <>
+                <div className="knowledge-toolbar chat-knowledge-options">
                   <label>
                     Aktyvus projektas
                     <select
@@ -824,51 +875,13 @@ export function LiveChat({ setup }: { setup: Setup }) {
                       "Tik aiškiai leistos bendros žinios"}
                     . Žinių klausimas nesiūlo agentų ar automatizacijų vykdymo.
                   </p>
-                </>
+                </div>
+              )}
+              {useKnowledge && knowledgeError && (
+                <p className="notice mb-3">{knowledgeError}</p>
               )}
             </div>
-            {useKnowledge && knowledgeError && (
-              <p className="notice mb-3">{knowledgeError}</p>
-            )}
-            <label
-              htmlFor="live-message"
-              className="block font-medium text-sm mb-2"
-            >
-              Jūsų žinutė
-            </label>
-            <textarea
-              id="live-message"
-              className="input"
-              rows={3}
-              maxLength={4000}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Aprašykite tikslą ir apribojimus…"
-              disabled={
-                busy ||
-                pending ||
-                !!attempt ||
-                !setup.database ||
-                !setup.modelEnabled
-              }
-            />
-            <div className="flex flex-wrap items-center gap-3 mt-4">
-              <button
-                type="submit"
-                className="button button-primary"
-                disabled={
-                  busy ||
-                  pending ||
-                  !!attempt ||
-                  !text.trim() ||
-                  (useKnowledge && !projectId && !includeGlobal) ||
-                  !setup.database ||
-                  !setup.modelEnabled
-                }
-              >
-                <PaperPlaneTilt size={16} />
-                Siųsti modeliui
-              </button>
+            <div className="chat-composer-actions">
               {busy && (
                 <button
                   type="button"
@@ -895,8 +908,11 @@ export function LiveChat({ setup }: { setup: Setup }) {
                 <ArrowClockwise size={16} />
                 Atnaujinti peržiūrą
               </button>
+              <span className="chat-composer-shortcut">
+                Enter — siųsti · Shift+Enter — nauja eilutė
+              </span>
             </div>
-            <p className="text-xs text-stone-500 mt-3">
+            <p className="chat-composer-notice">
               Siuntimas gali naudoti pasirinkto modelio kreditus. Delegavimas
               patvirtinamas atskirai.
             </p>
