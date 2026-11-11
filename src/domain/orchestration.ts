@@ -5,6 +5,21 @@ import {
   type Grounding,
   type KnowledgeScope,
 } from "./knowledge";
+// Control Center states the ceiling in the task description; Paperclip's own
+// budget enforcement is not assumed (the per-issue budget contract is unverified).
+export const budgetCeilingSchema = z
+  .object({
+    amount: z.number().positive().max(10000).multipleOf(0.01),
+    currency: z.literal("EUR"),
+  })
+  .strict();
+export type BudgetCeiling = z.infer<typeof budgetCeilingSchema>;
+export function formatBudget(b: BudgetCeiling) {
+  return `${b.amount} ${b.currency}`;
+}
+// Task-level proposal: objective = goal, completionCriteria = acceptance
+// criteria, agentId = optional target agent (null: Paperclip's own routing).
+// budgetCeiling is optional only so plans stored before it existed still parse.
 export const planSchema = z
   .object({
     objective: z.string().min(1).max(1000),
@@ -13,8 +28,14 @@ export const planSchema = z
     agentId: z.string().uuid().nullable(),
     completionCriteria: z.array(z.string().min(1).max(500)).min(1).max(6),
     constraints: z.array(z.string().min(1).max(500)).max(8),
+    budgetCeiling: budgetCeilingSchema.optional(),
   })
   .strict();
+export interface ExternalApproval {
+  id: string;
+  type: string;
+  status: string;
+}
 export type Plan = z.infer<typeof planSchema> & { agentName?: string };
 export const replySchema = z.discriminatedUnion("kind", [
   z
@@ -38,7 +59,7 @@ export const replySchema = z.discriminatedUnion("kind", [
     .object({
       kind: z.literal("plan"),
       reply: z.string().min(1).max(3000),
-      plan: planSchema,
+      plan: planSchema.required({ budgetCeiling: true }),
     })
     .strict(),
 ]);
@@ -83,6 +104,8 @@ export interface Run {
     title: string;
     description: string | null;
     comments: string[];
+    /** null (or absent on older rows) means Paperclip approvals were unavailable. */
+    approvals?: ExternalApproval[] | null;
   } | null;
   createdAt: string;
 }
