@@ -27,6 +27,7 @@ describe("deterministic model routing", () => {
         requestedTier: TASK_TIER[task],
         model: "m-default",
         fallback: false,
+        override: false,
       });
   });
 
@@ -46,6 +47,7 @@ describe("deterministic model routing", () => {
       requestedTier: "strong",
       model: "m-standard",
       fallback: true,
+      override: false,
     });
   });
 

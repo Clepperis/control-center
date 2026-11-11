@@ -13,6 +13,7 @@ import { Store, DomainError, digest, marker, toRun } from "./store";
 import type { AutomationService } from "../automations/service";
 import type { KnowledgeService } from "../knowledge/service";
 import type { Grounding, KnowledgeScope } from "@/domain/knowledge";
+import type { ModelTier } from "../models/routing";
 
 export class OrchestrationService {
   constructor(
@@ -43,6 +44,7 @@ export class OrchestrationService {
     text: string,
     signal?: AbortSignal,
     scope: KnowledgeScope | null = null,
+    tier: ModelTier | null = null,
   ) {
     if (scope && this.knowledge)
       await this.knowledge.project(owner, scope.projectId);
@@ -94,6 +96,7 @@ export class OrchestrationService {
         signal,
         offered,
         scope ? grounding : undefined,
+        { tier },
       );
       const reply = replySchema.parse(result.reply);
       if (scope && reply.kind !== "answer" && reply.kind !== "memory")
@@ -148,7 +151,9 @@ export class OrchestrationService {
                     model: result.route.model,
                     tier: result.route.tier,
                     fallback: result.route.fallback,
+                    override: result.route.override,
                   }),
+                  replyKind: reply.kind,
                 })
               : null,
             JSON.stringify(grounding),

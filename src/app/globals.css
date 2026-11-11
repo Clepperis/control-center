@@ -1902,3 +1902,35 @@ textarea.input {
     padding: 0 0 22px;
   }
 }
+
+/* Phase 7: per-turn model tier choice and route summary. */
+.chat-tier {
+  margin-left: auto;
+}
+.chat-tier-select {
+  min-height: 44px;
+  width: auto;
+  max-width: 13rem;
+  font-size: 12px;
+}
+.route-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+}
+.route-summary div {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+.route-summary dt {
+  font-weight: 600;
+}
+.route-summary dd {
+  overflow-wrap: anywhere;
+}

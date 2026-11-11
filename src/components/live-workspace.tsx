@@ -27,6 +27,7 @@ import {
   type Message,
   type Run,
   type Turn,
+  type Usage,
 } from "@/domain/orchestration";
 import { PageHeading, WorkspaceStatus, RecentActivity } from "./dashboard";
 import { Badge, EmptyState, SectionTitle } from "./ui";
@@ -490,6 +491,56 @@ const TIER_LABEL = {
   standard: "standartinis",
   strong: "stiprus",
 } as const;
+type ModelTierChoice = "" | keyof typeof TIER_LABEL;
+const ROUTE_LABEL: Record<NonNullable<Usage["replyKind"]>, string> = {
+  answer: "Atsakymas",
+  plan: "Paperclip užduoties pasiūlymas",
+  automation: "n8n automatizacijos pasiūlymas",
+  memory: "Atminties pasiūlymas",
+};
+function RouteSummary({
+  usage,
+  grounded,
+}: {
+  usage: Usage;
+  grounded: boolean;
+}) {
+  const cost = [
+    usage.totalTokens !== undefined ? `${usage.totalTokens} žetonų` : null,
+    usage.credits !== undefined ? `${usage.credits} nexos kreditų` : null,
+  ].filter(Boolean);
+  return (
+    <dl className="route-summary">
+      {usage.replyKind && (
+        <div>
+          <dt>Kas</dt>
+          <dd>
+            {usage.replyKind === "answer" && grounded
+              ? "Žinių atsakymas"
+              : ROUTE_LABEL[usage.replyKind]}
+          </dd>
+        </div>
+      )}
+      {usage.model && (
+        <div>
+          <dt>Modelis</dt>
+          <dd>
+            {usage.model}
+            {usage.tier ? ` · ${TIER_LABEL[usage.tier]}` : ""}
+            {usage.override ? " · pasirinkta jūsų" : ""}
+            {usage.fallback
+              ? " · pageidautas lygis nepasiekiamas, naudotas pigesnis"
+              : ""}
+          </dd>
+        </div>
+      )}
+      <div>
+        <dt>Kaina</dt>
+        <dd>{cost.length ? cost.join(" · ") : "nenurodyta"}</dd>
+      </div>
+    </dl>
+  );
+}
 export function LiveChat({ setup }: { setup: Setup }) {
   const search = useSearchParams();
   const firstId = search.get("conversation");
@@ -504,6 +555,7 @@ export function LiveChat({ setup }: { setup: Setup }) {
     [useKnowledge, setUseKnowledge] = useState(false),
     [includeGlobal, setIncludeGlobal] = useState(false),
     [knowledgeError, setKnowledgeError] = useState("");
+  const [tier, setTier] = useState<ModelTierChoice>("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -520,6 +572,7 @@ export function LiveChat({ setup }: { setup: Setup }) {
     requestId: string;
     text: string;
     knowledge: KnowledgeScope | null;
+    tier: Exclude<ModelTierChoice, ""> | null;
   } | null>(null);
   const load = useCallback(
     async (signal?: AbortSignal) => {
@@ -580,6 +633,7 @@ export function LiveChat({ setup }: { setup: Setup }) {
       knowledge: useKnowledge
         ? { projectId: projectId || null, includeGlobal }
         : null,
+      tier: tier || null,
     };
     setAttempt(body);
     setConversationId(body.conversationId);
@@ -742,23 +796,13 @@ export function LiveChat({ setup }: { setup: Setup }) {
                     </Link>
                   </div>
                 )}
-                {m.usage &&
+                {m.role === "assistant" &&
+                  m.usage &&
                   Object.values(m.usage).some((v) => v !== undefined) && (
-                    <p className="text-xs text-stone-500 mt-3">
-                      Gauta naudojimo ataskaita:{" "}
-                      {m.usage.totalTokens !== undefined
-                        ? `${m.usage.totalTokens} žetonų`
-                        : "bendras žetonų kiekis nenurodytas"}
-                      {m.usage.credits !== undefined
-                        ? ` · ${m.usage.credits} nexos kreditų`
-                        : ""}
-                      {m.usage.model
-                        ? ` · modelis ${m.usage.model}${m.usage.tier ? ` (${TIER_LABEL[m.usage.tier]})` : ""}`
-                        : ""}
-                      {m.usage.fallback
-                        ? " · pageidautas lygis nepasiekiamas, naudotas pigesnis"
-                        : ""}
-                    </p>
+                    <RouteSummary
+                      usage={m.usage}
+                      grounded={!!m.grounding?.scope}
+                    />
                   )}
               </article>
             ))}
@@ -840,6 +884,21 @@ export function LiveChat({ setup }: { setup: Setup }) {
                     onChange={(e) => setUseKnowledge(e.target.checked)}
                   />{" "}
                   Naudoti projekto žinias
+                </label>
+                <label className="chat-tier">
+                  <span className="sr-only">Modelio lygis</span>
+                  <select
+                    className="input chat-tier-select"
+                    value={tier}
+                    disabled={busy || !!attempt}
+                    onChange={(e) => setTier(e.target.value as ModelTierChoice)}
+                    title="Modelio lygis šiai žinutei"
+                  >
+                    <option value="">Modelis: automatiškai</option>
+                    <option value="fast">Greitas</option>
+                    <option value="standard">Standartinis</option>
+                    <option value="strong">Stiprus (brangesnis)</option>
+                  </select>
                 </label>
                 <button
                   type="submit"

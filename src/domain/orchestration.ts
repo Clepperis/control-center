@@ -52,6 +52,8 @@ export interface Usage {
   model?: string;
   tier?: "fast" | "standard" | "strong";
   fallback?: boolean;
+  override?: boolean;
+  replyKind?: ModelReply["kind"];
 }
 export type RunState =
   | "awaiting_confirmation"
