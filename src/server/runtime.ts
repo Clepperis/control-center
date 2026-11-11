@@ -20,6 +20,9 @@ import { KnowledgeService } from "./knowledge/service";
 import { MarkdownFiles } from "./knowledge/files";
 import { configuredImprovements } from "./improvements/configured";
 import { DatabaseUsageSink, logOnlyUsageSink } from "./observability/usage";
+import { usageStatistics } from "./observability/stats";
+import type { ToolHubDeps } from "./toolhub/server";
+import { DatabaseToolCallSink } from "./toolhub/audit";
 const globalDb = globalThis as typeof globalThis & {
   controlCenterDb?: Database;
 };
@@ -128,4 +131,42 @@ export function taskUrl(id: string) {
 /** Read-only nexos catalog of chat-capable models (no completion request). */
 export async function chatModelCatalog() {
   return new NexosGateway(gatewayConfig(process.env)).chatModels();
+}
+/** Tool Hub dependencies bound to the owner and the live services. */
+export function configuredToolHub(owner: string): ToolHubDeps {
+  const db = () => getStore().db;
+  return {
+    async searchKnowledge(query, projectId) {
+      // Knowledge needs a private Markdown root; report setup, not a crash.
+      if (!process.env.KNOWLEDGE_ROOT)
+        throw new IntegrationError("configuration");
+      const passages = await getKnowledgeService().search(
+        owner,
+        { projectId, includeGlobal: true },
+        query,
+      );
+      return passages.map((p) => ({
+        citation: p.citation,
+        title: p.title,
+        heading: p.heading ?? null,
+        content: p.content,
+      }));
+    },
+    usageStats: (days) => usageStatistics(db(), days),
+    async listAutomations() {
+      const contracts = await getAutomationService().offered(owner);
+      return contracts.map(({ key, name, purpose }) => ({
+        key,
+        name,
+        purpose,
+      }));
+    },
+    async proposeAutomation(requestId, key, text) {
+      const run = await getAutomationService().propose(owner, requestId, key, {
+        text,
+      });
+      return { id: run.id, state: run.state };
+    },
+    audit: new DatabaseToolCallSink(db()),
+  };
 }

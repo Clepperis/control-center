@@ -33,6 +33,10 @@ provider-reported tokens and nexos credits, and duration. It stores no prompts,
 replies or credentials. Runtime and worker both insert rows; the existing
 `ops/postgres/roles.sql` table grant covers it once re-run after migration.
 
+`008_tool_calls.sql` adds the Tool Hub audit trail: tool name, outcome, error
+code, duration and any approval request it created. Tool arguments and results
+are not stored.
+
 `scripts/migrate.ts --check` compares every migration checksum and refuses pending,
 modified or newer histories without writing schema. Applying production SQL
 requires `MIGRATION_DATABASE_URL` and an explicit operator invocation; neither

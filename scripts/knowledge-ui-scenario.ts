@@ -134,7 +134,11 @@ export async function verifyKnowledgeUi(
   const { s, root } = setup;
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(`${base}/knowledge`);
-  await page.getByText("Projektas ir importas", { exact: true }).click();
+  // The summary can render twice while the page hydrates; open the visible one.
+  await page
+    .locator("summary", { hasText: /^Projektas ir importas$/ })
+    .first()
+    .click();
   await page
     .getByLabel("Naujo projekto pavadinimas")
     .fill("Atlas (sintetinis)");
