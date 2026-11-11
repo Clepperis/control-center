@@ -149,7 +149,7 @@ describe("chat persists the route summary", () => {
       "Sintetinis klausimas",
       undefined,
       null,
-      "strong",
+      { tier: "strong" },
     );
     expect(requested).toBe("strong");
     expect(snapshot.messages[1].usage).toEqual({

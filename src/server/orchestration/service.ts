@@ -6,14 +6,13 @@ import {
   terminalStates,
 } from "@/domain/orchestration";
 import type { Agent } from "@/domain/models";
-import type { PlanningGateway } from "@/integrations/nexos";
+import type { CompletionOptions, PlanningGateway } from "@/integrations/nexos";
 import type { DelegationAdapter } from "@/integrations/paperclip";
 import { IntegrationError } from "@/integrations/errors";
 import { Store, DomainError, digest, marker, toRun } from "./store";
 import type { AutomationService } from "../automations/service";
 import type { KnowledgeService } from "../knowledge/service";
 import type { Grounding, KnowledgeScope } from "@/domain/knowledge";
-import type { ModelTier } from "../models/routing";
 
 export class OrchestrationService {
   constructor(
@@ -44,7 +43,7 @@ export class OrchestrationService {
     text: string,
     signal?: AbortSignal,
     scope: KnowledgeScope | null = null,
-    tier: ModelTier | null = null,
+    selection: CompletionOptions = {},
   ) {
     if (scope && this.knowledge)
       await this.knowledge.project(owner, scope.projectId);
@@ -96,7 +95,7 @@ export class OrchestrationService {
         signal,
         offered,
         scope ? grounding : undefined,
-        { tier },
+        selection,
       );
       const reply = replySchema.parse(result.reply);
       if (scope && reply.kind !== "answer" && reply.kind !== "memory")

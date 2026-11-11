@@ -5,8 +5,9 @@ export type ModelRoutes = Partial<Record<ModelTier, string>>;
 
 export interface ModelChoice {
   task: ModelTask;
-  tier: ModelTier;
-  requestedTier: ModelTier;
+  /** null when the owner picked an exact model instead of a tier. */
+  tier: ModelTier | null;
+  requestedTier: ModelTier | null;
   model: string;
   fallback: boolean;
   /** True when the owner picked the tier for this turn. */
