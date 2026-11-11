@@ -1,4 +1,5 @@
 import { PageHeading } from "./dashboard";
+import { formatEuro } from "./money";
 import type {
   UsageBucket,
   UsageStatistics,
@@ -10,7 +11,6 @@ const SOURCE_LABEL: Record<string, string> = {
   improvement: "Platform Engineer",
 };
 const number = new Intl.NumberFormat("lt-LT");
-const credits = new Intl.NumberFormat("lt-LT", { maximumFractionDigits: 6 });
 
 function UsageTable({
   caption,
@@ -33,7 +33,7 @@ function UsageTable({
             <th scope="col">Requests</th>
             <th scope="col">Errors</th>
             <th scope="col">Tokens</th>
-            <th scope="col">Credits</th>
+            <th scope="col">Cost</th>
           </tr>
         </thead>
         <tbody>
@@ -43,7 +43,7 @@ function UsageTable({
               <td>{number.format(r.calls)}</td>
               <td>{number.format(r.errors)}</td>
               <td>{number.format(r.totalTokens)}</td>
-              <td>{credits.format(r.credits)}</td>
+              <td>{formatEuro(r.credits)}</td>
             </tr>
           ))}
         </tbody>
@@ -62,7 +62,7 @@ export function UsageStatisticsView({
       <PageHeading
         eyebrow="Stebėsena"
         title="Statistika"
-        description="Model requests, errors, tokens ir nexos credits pagal teikėjo ataskaitas. Kaina žinoma tik po užklausos."
+        description="Model requests, errors, tokens ir cost eurais pagal nexos ataskaitas (1 nexos credit = 1 €). Kaina žinoma tik po užklausos."
       />
       <UsageStatisticsBody stats={stats} />
     </>
@@ -88,7 +88,7 @@ export function UsageStatisticsBody({
     ["Requests", number.format(stats.totals.calls)],
     ["Errors", number.format(stats.totals.errors)],
     ["Tokens", number.format(stats.totals.totalTokens)],
-    ["Credits", credits.format(stats.totals.credits)],
+    ["Cost", formatEuro(stats.totals.credits)],
   ];
   return (
     <>
