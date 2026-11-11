@@ -36,7 +36,17 @@ jobs:
       - name: Build
         run: npm run build
       - name: Browser dependencies
-        run: npx playwright install --with-deps chromium
+        # Ubuntu mirrors were unreachable for hours on 2026-11-11. Retry, then
+        # fall back to the browser alone: ubuntu-latest already ships the
+        # system libraries Chrome needs, so the UI checks still use a real browser.
+        run: |
+          for attempt in 1 2 3; do
+            npx playwright install --with-deps chromium && exit 0
+            echo "System dependency install failed (attempt $attempt); retrying in 20s."
+            sleep 20
+          done
+          echo "::warning::Ubuntu package mirrors unavailable; installing Chromium without system packages."
+          npx playwright install chromium
       - name: Production authentication boundary
         run: npm run test:boundary
       - name: Production password HTTPS desktop and mobile
