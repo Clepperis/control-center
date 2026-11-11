@@ -145,6 +145,18 @@ Each slice is a separate branch/PR with tests; live switches stay off.
    approval display. Requires verified application credentials first.
 6. **n8n authoring capability check.** Read-only `tools/list` probe with the
    application token; document results. Gate for slices 7–9.
+   _Done 2026-11-11 with the owner's application MCP token (read-only
+   `tools/list`, no tool called):_ the installed instance exposes 64 tools.
+   Authoring is available: `get_workflow_sdk_reference`, `validate_workflow`,
+   `validate_node_config`, `create_workflow_from_code`, `update_workflow`,
+   `get_workflow_history`, `get_workflow_version`, `get_workflow_versions_diff`,
+   `restore_workflow_version`, `publish_workflow`/`unpublish_workflow`,
+   `test_workflow`, `archive_workflow`, plus execution reads. Slices 7–9 are
+   therefore feasible through the official MCP interface; the application
+   allowlist still exposes only the five Phase 3 tools until those slices add
+   reviewed ones. The token also reaches credential listing, data tables,
+   folders and n8n Agents with the owner's native permissions; a dedicated
+   lower-privilege n8n user is recommended before enabling writes.
 7. **n8n create (draft only)** with validation and owner publish.
 8. **n8n effect classes and run policy.**
 9. **n8n improve** with versioned drafts, diff and rollback.
