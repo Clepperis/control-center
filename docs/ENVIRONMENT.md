@@ -17,6 +17,7 @@ Copy `.env.example` to `.env.local` once. Never overwrite existing secrets. All 
 | `DATABASE_URL`                                      | Separate application PostgreSQL connection; configure appropriate TLS                          |
 | `NEXOS_API_KEY`                                     | Separate gateway credential                                                                    |
 | `NEXOS_MODEL`                                       | Exact model catalog ID/name; no default fallback                                               |
+| `NEXOS_MODEL_FAST` / `_STANDARD` / `_STRONG`        | Optional tier models for chat / knowledge / Platform Engineer; empty uses `NEXOS_MODEL`        |
 | `NEXOS_MAX_COMPLETION_TOKENS`                       | 64–4096; default 1200; not a monetary ceiling                                                  |
 | `NEXOS_TIMEOUT_MS`                                  | 1000–60000; default 30000 per request                                                          |
 | `PAPERCLIP_BASE_URL`                                | HTTPS origin only, no embedded credentials/path                                                |

@@ -485,6 +485,11 @@ export function LiveOverview({
   );
 }
 
+const TIER_LABEL = {
+  fast: "greitas",
+  standard: "standartinis",
+  strong: "stiprus",
+} as const;
 export function LiveChat({ setup }: { setup: Setup }) {
   const search = useSearchParams();
   const firstId = search.get("conversation");
@@ -746,6 +751,12 @@ export function LiveChat({ setup }: { setup: Setup }) {
                         : "bendras žetonų kiekis nenurodytas"}
                       {m.usage.credits !== undefined
                         ? ` · ${m.usage.credits} nexos kreditų`
+                        : ""}
+                      {m.usage.model
+                        ? ` · modelis ${m.usage.model}${m.usage.tier ? ` (${TIER_LABEL[m.usage.tier]})` : ""}`
+                        : ""}
+                      {m.usage.fallback
+                        ? " · pageidautas lygis nepasiekiamas, naudotas pigesnis"
                         : ""}
                     </p>
                   )}

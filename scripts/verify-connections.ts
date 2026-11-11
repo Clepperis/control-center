@@ -31,14 +31,18 @@ try {
   );
 }
 try {
-  await new NexosGateway(gatewayConfig(process.env)).check();
+  const nexos = new NexosGateway(gatewayConfig(process.env));
+  await nexos.check();
+  const tiers = await nexos.routeStatus();
   console.log(
     JSON.stringify({
       service: "nexos",
       modelCatalogVerified: true,
+      tiers,
       completionVerified: false,
     }),
   );
+  if (Object.values(tiers).some((t) => !t.available)) failed = true;
 } catch {
   failed = true;
   console.error(

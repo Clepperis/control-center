@@ -112,6 +112,16 @@ Each slice is a separate branch/PR with tests; live switches stay off.
    (fake fetchers, PGlite); no real nexos call has been recorded yet.
 2. **Model routing table.** Config schema, catalog check, tier selection,
    fallback, owner override, confirmation for strong tier/cost ceiling.
+   _Implemented on `claude/phase-7-model-routing`:_ optional
+   `NEXOS_MODEL_FAST/STANDARD/STRONG` (empty uses `NEXOS_MODEL`), fixed
+   task→tier map (chat→fast, knowledge→standard, Platform Engineer→strong) in
+   `src/server/models/routing.ts`, live catalog check per call, fallback only to
+   cheaper tiers, model/tier/fallback persisted with each chat reply and shown
+   in the usage line, per-tier status in `verify:connections`. **Deferred to
+   slice 3** (needs the route card UI): per-turn owner override and
+   confirmation for the strong tier/cost ceiling. Today the strong tier is used
+   only by explicit Platform Engineer actions, which the owner already starts.
+   Deterministic substitutes only; no real catalog read with application keys.
 3. **Route card UI.** Unify existing reply kinds into one card in the chat page,
    preserving the owner's composer/layout changes. Desktop/mobile/a11y checks.
 4. **Statistika page.** Read-only aggregation over slice 1 data.

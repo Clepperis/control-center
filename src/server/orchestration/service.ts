@@ -141,7 +141,16 @@ export class OrchestrationService {
             conversationId,
             turn.id,
             content,
-            result.usage ? JSON.stringify(result.usage) : null,
+            result.usage || result.route
+              ? JSON.stringify({
+                  ...result.usage,
+                  ...(result.route && {
+                    model: result.route.model,
+                    tier: result.route.tier,
+                    fallback: result.route.fallback,
+                  }),
+                })
+              : null,
             JSON.stringify(grounding),
           ],
         );

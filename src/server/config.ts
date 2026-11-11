@@ -2,9 +2,12 @@ import { z } from "zod";
 import type { Env } from "./auth/policy";
 import { IntegrationError } from "@/integrations/errors";
 import { textContract, type AutomationContract } from "@/domain/automations";
+import type { ModelRoutes } from "./models/routing";
 export interface GatewayConfig {
   apiKey: string;
+  /** Default model; also used for any tier without its own model. */
   model: string;
+  routes?: ModelRoutes;
   maxTokens: number;
   timeoutMs: number;
   enabled: boolean;
@@ -18,11 +21,19 @@ export interface PaperclipConfig {
   contractVerified: boolean;
 }
 const nonempty = z.string().trim().min(1);
+// An empty `NAME=` line in an env file means "not configured".
+const optionalModel = z.preprocess(
+  (v) => (typeof v === "string" && !v.trim() ? undefined : v),
+  z.string().trim().min(1).max(200).optional(),
+);
 export function gatewayConfig(env: Env): GatewayConfig {
   const value = z
     .object({
       NEXOS_API_KEY: nonempty,
       NEXOS_MODEL: nonempty,
+      NEXOS_MODEL_FAST: optionalModel,
+      NEXOS_MODEL_STANDARD: optionalModel,
+      NEXOS_MODEL_STRONG: optionalModel,
       NEXOS_MAX_COMPLETION_TOKENS: z.coerce
         .number()
         .int()
@@ -41,6 +52,15 @@ export function gatewayConfig(env: Env): GatewayConfig {
   return {
     apiKey: value.data.NEXOS_API_KEY,
     model: value.data.NEXOS_MODEL,
+    routes: Object.fromEntries(
+      (
+        [
+          ["fast", value.data.NEXOS_MODEL_FAST],
+          ["standard", value.data.NEXOS_MODEL_STANDARD],
+          ["strong", value.data.NEXOS_MODEL_STRONG],
+        ] as const
+      ).filter(([, model]) => model !== undefined),
+    ) as ModelRoutes,
     maxTokens: value.data.NEXOS_MAX_COMPLETION_TOKENS,
     timeoutMs: value.data.NEXOS_TIMEOUT_MS,
     enabled: env.LIVE_MODEL_ENABLED === "true",
