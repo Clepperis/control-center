@@ -125,3 +125,7 @@ export function setupStatus() {
 export function taskUrl(id: string) {
   return configuredAdapters().paperclip.taskUrl(id) || null;
 }
+/** Read-only nexos catalog of chat-capable models (no completion request). */
+export async function chatModelCatalog() {
+  return new NexosGateway(gatewayConfig(process.env)).chatModels();
+}

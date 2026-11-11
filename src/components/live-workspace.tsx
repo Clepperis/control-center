@@ -491,7 +491,21 @@ const TIER_LABEL = {
   standard: "standartinis",
   strong: "stiprus",
 } as const;
-type ModelTierChoice = "" | keyof typeof TIER_LABEL;
+type ModelTier = keyof typeof TIER_LABEL;
+interface ChatModelOption {
+  id: string;
+  developer: string;
+}
+/** Select value: "" automatic, "tier:<tier>" or "model:<exact catalog id>". */
+function parseModelChoice(value: string): {
+  tier: ModelTier | null;
+  model: string | null;
+} {
+  if (value.startsWith("tier:"))
+    return { tier: value.slice(5) as ModelTier, model: null };
+  if (value.startsWith("model:")) return { tier: null, model: value.slice(6) };
+  return { tier: null, model: null };
+}
 const ROUTE_LABEL: Record<NonNullable<Usage["replyKind"]>, string> = {
   answer: "Atsakymas",
   plan: "Paperclip užduoties pasiūlymas",
@@ -555,7 +569,21 @@ export function LiveChat({ setup }: { setup: Setup }) {
     [useKnowledge, setUseKnowledge] = useState(false),
     [includeGlobal, setIncludeGlobal] = useState(false),
     [knowledgeError, setKnowledgeError] = useState("");
-  const [tier, setTier] = useState<ModelTierChoice>("");
+  const [modelChoice, setModelChoice] = useState("");
+  const [chatModels, setChatModels] = useState<ChatModelOption[]>([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    request<{ models: ChatModelOption[] }>(
+      "/api/models",
+      undefined,
+      controller.signal,
+    )
+      .then((r) => setChatModels(r.models))
+      .catch(() => {
+        /* Tiers stay available; the list needs the nexos key. */
+      });
+    return () => controller.abort();
+  }, []);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -572,7 +600,8 @@ export function LiveChat({ setup }: { setup: Setup }) {
     requestId: string;
     text: string;
     knowledge: KnowledgeScope | null;
-    tier: Exclude<ModelTierChoice, ""> | null;
+    tier: ModelTier | null;
+    model: string | null;
   } | null>(null);
   const load = useCallback(
     async (signal?: AbortSignal) => {
@@ -633,7 +662,7 @@ export function LiveChat({ setup }: { setup: Setup }) {
       knowledge: useKnowledge
         ? { projectId: projectId || null, includeGlobal }
         : null,
-      tier: tier || null,
+      ...parseModelChoice(modelChoice),
     };
     setAttempt(body);
     setConversationId(body.conversationId);
@@ -886,18 +915,29 @@ export function LiveChat({ setup }: { setup: Setup }) {
                   Naudoti projekto žinias
                 </label>
                 <label className="chat-tier">
-                  <span className="sr-only">Modelio lygis</span>
+                  <span className="sr-only">Modelis šiai žinutei</span>
                   <select
                     className="input chat-tier-select"
-                    value={tier}
+                    value={modelChoice}
                     disabled={busy || !!attempt}
-                    onChange={(e) => setTier(e.target.value as ModelTierChoice)}
-                    title="Modelio lygis šiai žinutei"
+                    onChange={(e) => setModelChoice(e.target.value)}
+                    title="Modelis šiai žinutei"
                   >
                     <option value="">Modelis: automatiškai</option>
-                    <option value="fast">Greitas</option>
-                    <option value="standard">Standartinis</option>
-                    <option value="strong">Stiprus (brangesnis)</option>
+                    <optgroup label="Lygiai">
+                      <option value="tier:fast">Greitas</option>
+                      <option value="tier:standard">Standartinis</option>
+                      <option value="tier:strong">Stiprus</option>
+                    </optgroup>
+                    {chatModels.length > 0 && (
+                      <optgroup label="Konkretus modelis">
+                        {chatModels.map((m) => (
+                          <option key={m.id} value={`model:${m.id}`}>
+                            {m.developer ? `${m.id} · ${m.developer}` : m.id}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 </label>
                 <button

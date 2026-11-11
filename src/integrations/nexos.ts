@@ -39,7 +39,24 @@ export interface PlanningGateway {
 export interface CompletionOptions {
   /** Owner-selected tier for this turn; absent means automatic routing. */
   tier?: ModelTier | null;
+  /** Owner-selected exact chat model; exclusive with `tier`. */
+  model?: string | null;
 }
+export interface ChatModel {
+  id: string;
+  developer: string;
+}
+const catalogEntry = z.object({
+  id: z.string(),
+  nexos_model_id: z.string().optional(),
+  developer: z.string().optional(),
+  endpoints: z.array(z.string()).optional(),
+});
+type CatalogEntry = z.infer<typeof catalogEntry>;
+const entryNames = (m: CatalogEntry) =>
+  m.nexos_model_id ? [m.id, m.nexos_model_id] : [m.id];
+const isChatModel = (m: CatalogEntry) =>
+  !!m.endpoints?.includes("chat_completion");
 export const usageSchema = z
   .object({
     prompt_tokens: z.number().int().nonnegative().optional(),
@@ -65,8 +82,7 @@ export class NexosGateway implements PlanningGateway {
     private fetcher: Fetcher = fetch,
     private usageSink: UsageSink = logOnlyUsageSink,
   ) {}
-  /** Exact model IDs/names the account's catalog currently lists. */
-  async catalog(signal?: AbortSignal): Promise<Set<string>> {
+  private async entries(signal?: AbortSignal): Promise<CatalogEntry[]> {
     const raw = await requestJson(
       this.fetcher,
       "https://api.nexos.ai/v1/models",
@@ -75,17 +91,25 @@ export class NexosGateway implements PlanningGateway {
     );
     const result = z
       .object({
-        data: z.array(
-          z.object({ id: z.string(), nexos_model_id: z.string().optional() }),
-        ),
+        data: z.array(catalogEntry),
       })
       .safeParse(raw);
     if (!result.success) throw new IntegrationError("configuration");
-    return new Set(
-      result.data.data.flatMap((m) =>
-        m.nexos_model_id ? [m.id, m.nexos_model_id] : [m.id],
-      ),
-    );
+    return result.data.data;
+  }
+  /** Exact model IDs/names the account's catalog currently lists. */
+  async catalog(signal?: AbortSignal): Promise<Set<string>> {
+    return new Set((await this.entries(signal)).flatMap(entryNames));
+  }
+  /** Models the owner may pick in chat: those exposing chat completion. */
+  async chatModels(signal?: AbortSignal): Promise<ChatModel[]> {
+    return (await this.entries(signal))
+      .filter(isChatModel)
+      .map((m) => ({ id: m.id, developer: m.developer ?? "" }))
+      .sort(
+        (a, b) =>
+          a.developer.localeCompare(b.developer) || a.id.localeCompare(b.id),
+      );
   }
   async check(signal?: AbortSignal) {
     if (!(await this.catalog(signal)).has(this.config.model))
@@ -96,7 +120,22 @@ export class NexosGateway implements PlanningGateway {
     task: ModelTask,
     signal?: AbortSignal,
     ownerTier?: ModelTier | null,
+    ownerModel?: string | null,
   ): Promise<ModelChoice> {
+    if (ownerTier && ownerModel) throw new IntegrationError("malformed");
+    if (ownerModel) {
+      const chat = (await this.entries(signal)).filter(isChatModel);
+      if (!chat.some((m) => entryNames(m).includes(ownerModel)))
+        throw new IntegrationError("configuration");
+      return {
+        task,
+        tier: null,
+        requestedTier: null,
+        model: ownerModel,
+        fallback: false,
+        override: true,
+      };
+    }
     const ids = await this.catalog(signal);
     const choice = chooseModel(
       this.config.model,
@@ -138,6 +177,7 @@ export class NexosGateway implements PlanningGateway {
       grounding ? "knowledge" : "chat",
       signal,
       options.tier,
+      options.model,
     );
     const eligible = agents.filter((a) => a.eligible);
     const system = [

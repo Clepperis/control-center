@@ -11,8 +11,10 @@ const schema = z
     text: z.string().trim().min(1).max(4000),
     knowledge: scopeSchema.nullable().optional(),
     tier: z.enum(MODEL_TIERS).nullable().optional(),
+    model: z.string().trim().min(1).max(200).nullable().optional(),
   })
-  .strict();
+  .strict()
+  .refine((b) => !(b.tier && b.model), "Choose a tier or a model, not both.");
 export async function POST(request: Request) {
   return api(async (owner) => {
     requireLiveMode(process.env);
@@ -24,7 +26,7 @@ export async function POST(request: Request) {
       body.text,
       request.signal,
       body.knowledge ?? null,
-      body.tier ?? null,
+      { tier: body.tier ?? null, model: body.model ?? null },
     );
     return {
       ...snapshot,

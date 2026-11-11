@@ -50,7 +50,8 @@ export interface Usage {
   credits?: number;
   /** Routing facts persisted with the reply so the owner can see them. */
   model?: string;
-  tier?: "fast" | "standard" | "strong";
+  /** null when the owner chose an exact model rather than a tier. */
+  tier?: "fast" | "standard" | "strong" | null;
   fallback?: boolean;
   override?: boolean;
   replyKind?: ModelReply["kind"];
