@@ -487,9 +487,9 @@ export function LiveOverview({
 }
 
 const TIER_LABEL = {
-  fast: "greitas",
-  standard: "standartinis",
-  strong: "stiprus",
+  fast: "Fast",
+  standard: "Standard",
+  strong: "Strong",
 } as const;
 type ModelTier = keyof typeof TIER_LABEL;
 interface ChatModelOption {
@@ -522,16 +522,16 @@ function RouteSummary({
   grounded: boolean;
 }) {
   const cost = [
-    usage.totalTokens !== undefined ? `${usage.totalTokens} žetonų` : null,
+    usage.totalTokens !== undefined ? `${usage.totalTokens} tokens` : null,
     usage.credits !== undefined
-      ? `${CREDITS.format(usage.credits)} nexos kreditų`
+      ? `${CREDITS.format(usage.credits)} credits`
       : null,
   ].filter(Boolean);
   return (
     <dl className="route-summary">
       {usage.replyKind && (
         <div>
-          <dt>Kas</dt>
+          <dt>Route</dt>
           <dd>
             {usage.replyKind === "answer" && grounded
               ? "Žinių atsakymas"
@@ -541,19 +541,19 @@ function RouteSummary({
       )}
       {usage.model && (
         <div>
-          <dt>Modelis</dt>
+          <dt>Model</dt>
           <dd>
             {usage.model}
             {usage.tier ? ` · ${TIER_LABEL[usage.tier]}` : ""}
-            {usage.override ? " · pasirinkta jūsų" : ""}
+            {usage.override ? " · override" : ""}
             {usage.fallback
-              ? " · pageidautas lygis nepasiekiamas, naudotas pigesnis"
+              ? " · fallback: pageidautas tier nepasiekiamas, naudotas pigesnis"
               : ""}
           </dd>
         </div>
       )}
       <div>
-        <dt>Kaina</dt>
+        <dt>Cost</dt>
         <dd>{cost.length ? cost.join(" · ") : "nenurodyta"}</dd>
       </div>
     </dl>
@@ -927,14 +927,14 @@ export function LiveChat({ setup }: { setup: Setup }) {
                     onChange={(e) => setModelChoice(e.target.value)}
                     title="Modelis šiai žinutei"
                   >
-                    <option value="">Modelis: automatiškai</option>
-                    <optgroup label="Lygiai">
-                      <option value="tier:fast">Greitas</option>
-                      <option value="tier:standard">Standartinis</option>
-                      <option value="tier:strong">Stiprus</option>
+                    <option value="">Model: Auto</option>
+                    <optgroup label="Tiers">
+                      <option value="tier:fast">Fast</option>
+                      <option value="tier:standard">Standard</option>
+                      <option value="tier:strong">Strong</option>
                     </optgroup>
                     {chatModels.length > 0 && (
-                      <optgroup label="Konkretus modelis">
+                      <optgroup label="Models">
                         {chatModels.map((m) => (
                           <option key={m.id} value={`model:${m.id}`}>
                             {m.developer ? `${m.id} · ${m.developer}` : m.id}
