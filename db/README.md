@@ -27,6 +27,12 @@ operational SQL can still read its existing tables, but Phase 5 has no password
 login. An application rollback to Phase 5 is therefore not an acceptable public
 authentication rollback without a separately verified legacy boundary.
 
+`007_model_usage.sql` adds installation-level model call accounting: source
+(`chat`, `knowledge`, `improvement`), exact model ID, outcome/error code,
+provider-reported tokens and nexos credits, and duration. It stores no prompts,
+replies or credentials. Runtime and worker both insert rows; the existing
+`ops/postgres/roles.sql` table grant covers it once re-run after migration.
+
 `scripts/migrate.ts --check` compares every migration checksum and refuses pending,
 modified or newer histories without writing schema. Applying production SQL
 requires `MIGRATION_DATABASE_URL` and an explicit operator invocation; neither

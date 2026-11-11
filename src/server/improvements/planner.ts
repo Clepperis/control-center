@@ -1,6 +1,15 @@
 import { z } from "zod";
 import type { GatewayConfig } from "../config";
-import { NexosGateway } from "@/integrations/nexos";
+import {
+  NexosGateway,
+  normalizeUsage,
+  usageSchema,
+} from "@/integrations/nexos";
+import {
+  logOnlyUsageSink,
+  trackModelCall,
+  type UsageSink,
+} from "../observability/usage";
 import {
   requestJson,
   IntegrationError,
@@ -29,6 +38,7 @@ export class NexosPlatformPlanner implements PlatformPlanner {
   constructor(
     private config: GatewayConfig,
     private fetcher: Fetcher = fetch,
+    private usageSink: UsageSink = logOnlyUsageSink,
   ) {}
   async respond(
     request: Improvement,
@@ -38,6 +48,20 @@ export class NexosPlatformPlanner implements PlatformPlanner {
   ) {
     if (!this.config.enabled) throw new IntegrationError("disabled");
     await new NexosGateway(this.config, this.fetcher).check();
+    return trackModelCall(
+      this.usageSink,
+      { source: "improvement", model: this.config.model },
+      (report) =>
+        this.request(request, context, knowledge, investigate, report),
+    );
+  }
+  private async request(
+    request: Improvement,
+    context: RepositoryContext | null,
+    knowledge: Passage[],
+    investigate: boolean,
+    report: (usage: ReturnType<typeof normalizeUsage>) => void,
+  ) {
     const result = await requestJson(
       this.fetcher,
       "https://api.nexos.ai/v1/chat/completions",
@@ -100,6 +124,8 @@ export class NexosPlatformPlanner implements PlatformPlanner {
       },
       { timeoutMs: this.config.timeoutMs },
     );
+    const spent = z.object({ usage: usageSchema }).safeParse(result);
+    report(spent.success ? normalizeUsage(spent.data.usage) : null);
     const parsed = z
       .object({
         choices: z
