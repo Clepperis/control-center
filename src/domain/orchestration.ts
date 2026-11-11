@@ -54,6 +54,8 @@ export interface Usage {
   tier?: "fast" | "standard" | "strong" | null;
   fallback?: boolean;
   override?: boolean;
+  /** "owner" or the automatic task-analysis reason. */
+  routeReason?: string;
   replyKind?: ModelReply["kind"];
 }
 export type RunState =
