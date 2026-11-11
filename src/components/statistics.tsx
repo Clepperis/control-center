@@ -1,5 +1,7 @@
 import { PageHeading } from "./dashboard";
 import { formatEuro } from "./money";
+import { CombinedUsage } from "./combined-usage";
+import type { UsageSnapshot } from "@/domain/usage";
 import type {
   UsageBucket,
   UsageStatistics,
@@ -54,8 +56,12 @@ function UsageTable({
 
 export function UsageStatisticsView({
   stats,
+  snapshot = null,
+  now,
 }: {
   stats: UsageStatistics | null;
+  snapshot?: UsageSnapshot | null;
+  now: number;
 }) {
   return (
     <>
@@ -65,6 +71,7 @@ export function UsageStatisticsView({
         description="Model requests, errors, tokens ir cost eurais pagal nexos ataskaitas (1 nexos credit = 1 €). Kaina žinoma tik po užklausos."
       />
       <UsageStatisticsBody stats={stats} />
+      <CombinedUsage snapshot={snapshot} now={now} />
     </>
   );
 }
