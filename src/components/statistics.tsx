@@ -10,7 +10,7 @@ const SOURCE_LABEL: Record<string, string> = {
   improvement: "Tobulinti sistemą",
 };
 const number = new Intl.NumberFormat("lt-LT");
-const credits = new Intl.NumberFormat("lt-LT", { maximumFractionDigits: 4 });
+const credits = new Intl.NumberFormat("lt-LT", { maximumFractionDigits: 6 });
 
 function UsageTable({
   caption,

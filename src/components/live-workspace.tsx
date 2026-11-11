@@ -506,6 +506,8 @@ function parseModelChoice(value: string): {
   if (value.startsWith("model:")) return { tier: null, model: value.slice(6) };
   return { tier: null, model: null };
 }
+// Provider credits are tiny decimals; avoid float artifacts like 0.000224840000002.
+const CREDITS = new Intl.NumberFormat("lt-LT", { maximumFractionDigits: 6 });
 const ROUTE_LABEL: Record<NonNullable<Usage["replyKind"]>, string> = {
   answer: "Atsakymas",
   plan: "Paperclip užduoties pasiūlymas",
@@ -521,7 +523,9 @@ function RouteSummary({
 }) {
   const cost = [
     usage.totalTokens !== undefined ? `${usage.totalTokens} žetonų` : null,
-    usage.credits !== undefined ? `${usage.credits} nexos kreditų` : null,
+    usage.credits !== undefined
+      ? `${CREDITS.format(usage.credits)} nexos kreditų`
+      : null,
   ].filter(Boolean);
   return (
     <dl className="route-summary">
