@@ -1,16 +1,16 @@
 import { PageHeading } from "./dashboard";
+import { formatEuro } from "./money";
 import type {
   UsageBucket,
   UsageStatistics,
 } from "@/server/observability/stats";
 
 const SOURCE_LABEL: Record<string, string> = {
-  chat: "Pokalbis",
-  knowledge: "Žinių klausimai",
-  improvement: "Tobulinti sistemą",
+  chat: "Chat",
+  knowledge: "Knowledge",
+  improvement: "Platform Engineer",
 };
 const number = new Intl.NumberFormat("lt-LT");
-const credits = new Intl.NumberFormat("lt-LT", { maximumFractionDigits: 4 });
 
 function UsageTable({
   caption,
@@ -30,10 +30,10 @@ function UsageTable({
         <thead>
           <tr>
             <th scope="col">{heading}</th>
-            <th scope="col">Užklausos</th>
-            <th scope="col">Klaidos</th>
-            <th scope="col">Žetonai</th>
-            <th scope="col">nexos kreditai</th>
+            <th scope="col">Requests</th>
+            <th scope="col">Errors</th>
+            <th scope="col">Tokens</th>
+            <th scope="col">Cost</th>
           </tr>
         </thead>
         <tbody>
@@ -43,7 +43,7 @@ function UsageTable({
               <td>{number.format(r.calls)}</td>
               <td>{number.format(r.errors)}</td>
               <td>{number.format(r.totalTokens)}</td>
-              <td>{credits.format(r.credits)}</td>
+              <td>{formatEuro(r.credits)}</td>
             </tr>
           ))}
         </tbody>
@@ -62,7 +62,7 @@ export function UsageStatisticsView({
       <PageHeading
         eyebrow="Stebėsena"
         title="Statistika"
-        description="Modelių užklausos, klaidos, žetonai ir nexos kreditai pagal teikėjo ataskaitas. Kainos skaičiuojamos tik po užklausos."
+        description="Model requests, errors, tokens ir cost eurais pagal nexos ataskaitas (1 nexos credit = 1 €). Kaina žinoma tik po užklausos."
       />
       <UsageStatisticsBody stats={stats} />
     </>
@@ -85,10 +85,10 @@ export function UsageStatisticsBody({
       </>
     );
   const tiles = [
-    ["Užklausos", number.format(stats.totals.calls)],
-    ["Klaidos", number.format(stats.totals.errors)],
-    ["Žetonai", number.format(stats.totals.totalTokens)],
-    ["nexos kreditai", credits.format(stats.totals.credits)],
+    ["Requests", number.format(stats.totals.calls)],
+    ["Errors", number.format(stats.totals.errors)],
+    ["Tokens", number.format(stats.totals.totalTokens)],
+    ["Cost", formatEuro(stats.totals.credits)],
   ];
   return (
     <>
@@ -108,21 +108,13 @@ export function UsageStatisticsBody({
       ) : (
         <>
           <UsageTable
-            caption="Pagal paskirtį"
-            heading="Paskirtis"
+            caption="By source"
+            heading="Source"
             rows={stats.bySource}
             label={(key) => SOURCE_LABEL[key] ?? key}
           />
-          <UsageTable
-            caption="Pagal modelį"
-            heading="Modelis"
-            rows={stats.byModel}
-          />
-          <UsageTable
-            caption="Pagal dieną"
-            heading="Diena"
-            rows={stats.byDay}
-          />
+          <UsageTable caption="By model" heading="Model" rows={stats.byModel} />
+          <UsageTable caption="By day (UTC)" heading="Day" rows={stats.byDay} />
         </>
       )}
     </>

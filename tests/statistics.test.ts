@@ -108,9 +108,9 @@ describe("statistics view", () => {
         stats: await usageStatistics(db, 30),
       }),
     );
-    expect(html).toContain("Užklausos");
-    expect(html).toContain("Pokalbis");
-    expect(html).toContain("Žinių klausimai");
+    expect(html).toContain("Requests");
+    expect(html).toContain("Chat");
+    expect(html).toContain("Knowledge");
     expect(html).toContain("m-standard");
     expect(html).toContain("<caption");
   });
