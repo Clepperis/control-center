@@ -28,7 +28,7 @@ const agent: Agent = {
   status: "idle",
   eligible: true,
 };
-const plan: Plan = {
+const plan: Plan & Required<Pick<Plan, "budgetCeiling">> = {
   objective: "Patikrinti sintetinį sakinį",
   title: "Vieno sakinio peržiūra",
   boundedTask:
@@ -36,6 +36,7 @@ const plan: Plan = {
   agentId,
   completionCriteria: ["Vienas pasiūlymas su paaiškinimu"],
   constraints: ["Jokių išorinių veiksmų"],
+  budgetCeiling: { amount: 5, currency: "EUR" },
 };
 let db: Database;
 let store: Store;
@@ -180,21 +181,6 @@ describe("durable owner orchestration", () => {
     ).rejects.toMatchObject({ code: "agent_unavailable" });
     expect(createCalls).toBe(0);
     expect((await store.ownedRun("owner", run.id)).confirmedAt).toBeNull();
-  });
-  it("blocks an unassigned proposal rather than fabricating an executable agent", async () => {
-    eligible = [];
-    gateway.complete = async () => ({
-      reply: {
-        kind: "plan",
-        reply: "Reikia parengti agentą.",
-        plan: { ...plan, agentId: null },
-      },
-      usage: null,
-    });
-    const { run } = await proposed();
-    expect(run.state).toBe("blocked");
-    expect(run.errorCode).toBe("agent_unavailable");
-    expect(createCalls).toBe(0);
   });
   it("reconciles an ambiguous successful POST after restart without ever issuing another POST", async () => {
     const original = paperclip.createTask.bind(paperclip);

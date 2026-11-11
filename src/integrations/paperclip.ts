@@ -95,11 +95,12 @@ export class PaperclipClient implements DelegationAdapter {
     }));
   }
   async createTask(
-    task: { title: string; description: string; agentId: string },
+    task: { title: string; description: string; agentId?: string },
     signal?: AbortSignal,
   ) {
     if (!this.config.enabled) throw new IntegrationError("disabled");
-    if (!this.config.agentIds.includes(task.agentId))
+    // No agentId: Paperclip routes the task itself; never one issue per agent.
+    if (task.agentId && !this.config.agentIds.includes(task.agentId))
       throw new IntegrationError("agent_unavailable");
     const raw = await this.request(
       `/companies/${this.config.companyId}/issues`,
@@ -108,7 +109,7 @@ export class PaperclipClient implements DelegationAdapter {
         title: task.title,
         description: task.description,
         status: "todo",
-        assigneeAgentId: task.agentId,
+        ...(task.agentId && { assigneeAgentId: task.agentId }),
       },
       signal,
     );
@@ -133,7 +134,37 @@ export class PaperclipClient implements DelegationAdapter {
       .array(z.object({ body: z.string().max(100000) }))
       .safeParse(raw);
     if (!comments.success) throw new IntegrationError("malformed");
-    return { ...task, comments: comments.data.map((c) => c.body) };
+    return {
+      ...task,
+      comments: comments.data.map((c) => c.body),
+      approvals: await this.readApprovals(id, signal),
+    };
+  }
+  // Approvals are supplementary: any failure means "unavailable", never an empty list.
+  private async readApprovals(id: string, signal?: AbortSignal) {
+    try {
+      const parsed = z
+        .array(
+          z.object({
+            id: z.string().max(100),
+            type: z.string().max(100),
+            status: z.string().max(100),
+          }),
+        )
+        .max(50)
+        .safeParse(
+          await this.request(
+            `/issues/${id}/approvals`,
+            "GET",
+            undefined,
+            signal,
+          ),
+        );
+      return parsed.success ? parsed.data : null;
+    } catch {
+      if (signal?.aborted) throw new IntegrationError("cancelled");
+      return null;
+    }
   }
   async findByMarker(
     marker: string,

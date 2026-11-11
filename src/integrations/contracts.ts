@@ -1,10 +1,11 @@
 import type { Agent } from "@/domain/models";
+import type { ExternalApproval } from "@/domain/orchestration";
 import type { AutomationContract, CatalogWorkflow } from "@/domain/automations";
 // Domain-facing contracts, not speculative external API payloads.
 export interface PaperclipAdapter {
   listAgents(signal?: AbortSignal): Promise<Agent[]>;
   createTask(
-    task: { title: string; description: string; agentId: string },
+    task: { title: string; description: string; agentId?: string },
     signal?: AbortSignal,
   ): Promise<{ id: string }>;
   readTask(id: string, signal?: AbortSignal): Promise<ExternalTask>;
@@ -17,6 +18,8 @@ export interface ExternalTask {
   title: string;
   description: string | null;
   comments: string[];
+  /** null: approvals could not be read; undefined: not requested. */
+  approvals?: ExternalApproval[] | null;
   assigneeAgentId: string | null;
 }
 export interface AutomationAdapter {
