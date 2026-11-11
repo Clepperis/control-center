@@ -23,6 +23,7 @@ import { DatabaseUsageSink, logOnlyUsageSink } from "./observability/usage";
 import { usageStatistics } from "./observability/stats";
 import type { ToolHubDeps } from "./toolhub/server";
 import { DatabaseToolCallSink } from "./toolhub/audit";
+import { LessonService } from "./learning/service";
 const globalDb = globalThis as typeof globalThis & {
   controlCenterDb?: Database;
 };
@@ -74,7 +75,11 @@ export function getService() {
     process.env.LIVE_DELEGATION_ENABLED === "true",
     getAutomationService(),
     getKnowledgeService(),
+    getLessonService(),
   );
+}
+export function getLessonService() {
+  return new LessonService(getStore().db);
 }
 export function getAutomationService() {
   return configuredAutomations(getStore());
@@ -167,6 +172,14 @@ export function configuredToolHub(owner: string): ToolHubDeps {
       });
       return { id: run.id, state: run.state };
     },
+    async proposeLesson(text) {
+      const l = await getLessonService().propose(owner, {
+        text,
+        source: "agent",
+      });
+      return { id: l.id, state: l.state, occurrences: l.occurrences };
+    },
+    approvedLessons: () => getLessonService().approved(owner),
     audit: new DatabaseToolCallSink(db()),
   };
 }

@@ -40,6 +40,11 @@ export interface ToolHubDeps {
     key: string,
     text: string,
   ): Promise<{ id: string; state: string }>;
+  /** Agents may only propose; the owner approves in Control Center. */
+  proposeLesson(
+    text: string,
+  ): Promise<{ id: string; state: string; occurrences: number }>;
+  approvedLessons(): Promise<string[]>;
   audit: ToolCallSink;
 }
 
@@ -187,6 +192,44 @@ export function buildToolHubServer(deps: ToolHubDeps): McpServer {
             state: proposal.state,
             review: "Control Center → Automatizacijos",
           },
+        };
+      }),
+  );
+  server.registerTool(
+    "list_lessons",
+    {
+      title: "Owner-approved lessons",
+      description:
+        "Rules the owner approved from past mistakes and feedback. Follow them. Read-only.",
+      inputSchema: z.object({}),
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    async () =>
+      run(deps, "list_lessons", async () => ({
+        result: await deps.approvedLessons(),
+      })),
+  );
+
+  server.registerTool(
+    "propose_lesson",
+    {
+      title: "Propose a lesson",
+      description:
+        "Propose a short reusable rule learned from a mistake, for example: Check the CRM sheet before suggesting a partner. It is NOT applied until the owner approves it in Control Center. Repeats are counted.",
+      inputSchema: z.object({ text: z.string().trim().min(3).max(400) }),
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async ({ text }) =>
+      run(deps, "propose_lesson", async () => {
+        const lesson = await deps.proposeLesson(text);
+        return {
+          approvalRef: lesson.id,
+          result: { status: "awaiting_owner_approval", ...lesson },
         };
       }),
   );

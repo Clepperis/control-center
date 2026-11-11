@@ -1985,3 +1985,45 @@ textarea.input {
   color: var(--muted);
   font-weight: 500;
 }
+
+/* Phase 7: feedback and lessons. */
+.feedback-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.feedback-btn {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0 10px;
+}
+.feedback-note {
+  display: flex;
+  flex: 1 1 260px;
+  gap: 8px;
+  min-width: 0;
+}
+.feedback-note .input {
+  flex: 1;
+  min-width: 0;
+}
+.lessons {
+  display: grid;
+  gap: 24px;
+}
+.lessons section {
+  display: grid;
+  gap: 10px;
+}
+.lesson {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+}
+.lesson-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

@@ -154,7 +154,7 @@ it("checks exact schema and refuses old/new/modified histories without auto-migr
     );
     expect(address.rows[0].address).toBe("127.0.0.1");
     await migrate(db, dir);
-    await expect(checkSchema(db, dir)).resolves.toHaveLength(8);
+    await expect(checkSchema(db, dir)).resolves.toHaveLength(9);
     await db.query("UPDATE schema_migrations SET checksum=$1 WHERE name=$2", [
       "0".repeat(64),
       "006_owner_auth.sql",
