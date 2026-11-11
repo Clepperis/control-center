@@ -38,6 +38,8 @@ The live UI identifies missing setup and never substitutes demo data. Read [inte
 | `npm run verify:connections`           | Explicit read-only operator/model-catalog probes                                            |
 | `npm run verify:n8n`                   | Redacted, read-only application n8n catalog/contract probe                                  |
 | `npm run verify:platform`              | Read-only repository/executor-policy readiness check; no coding run                         |
+| `npm run usage:sync`                   | Read local Claude/Codex metadata, Nexos receipts and Paperclip usage                        |
+| `npm run usage:watch`                  | Refresh shared usage and the configured Paperclip manager every five minutes                |
 | `npm run lint` / `npm run typecheck`   | ESLint / TypeScript                                                                         |
 | `npm test`                             | PostgreSQL-engine, adapter, state machine and authentication tests                          |
 | `npm run test:ui`                      | Demo interactions against a running dev server                                              |
@@ -57,5 +59,7 @@ For n8n, follow [Phase 3 configuration and the explicit live-test gate](docs/PHA
 For knowledge, follow [Phase 4 setup, storage, recovery and validation](docs/PHASE-4.md). Set `KNOWLEDGE_ROOT` to an absolute private directory outside this public checkout, apply migration 004, and run the web app plus worker. Create/select a project in **Žinios**, add Markdown or preview selected imports, then explicitly select that scope in chat. Search needs no model/embedding credentials; chat retains the Phase 2 model approval gate. No private documents are bundled.
 
 For **Tobulinti sistemą**, follow [Phase 5 setup and review](docs/PHASE-5.md), apply migration 005, and use the existing worker. Keep `IMPROVEMENT_EXECUTOR_ENABLED=false` until separate application credentials, a ready Paperclip coding runtime, independently enforced isolation/budget controls and a specific live-run approval exist. The current delivery includes deterministic lifecycle/browser verification, not proof of a real isolated coding run. Integration is a manual exact-commit handoff; deployment belongs to Phase 6.
+
+For shared **Nexos.ai / Claude / Codex usage**, follow [collection, Paperclip awareness and coverage limits](docs/SHARED-USAGE.md). `/statistics` and the owner-only `/api/usage` read the validated private snapshot. Run the collector on the computer with the client logs; `--publish` updates only the configured manager's marked report, preserving its other instructions and existing budgets.
 
 Read [architecture](docs/ARCHITECTURE.md), [validation](docs/VALIDATION.md) and [roadmap](docs/ROADMAP.md) before future work. Keep the full local audit, private infrastructure addresses, personal data, vault and credentials out of this public repository.
