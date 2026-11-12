@@ -13,6 +13,8 @@ import { Store, DomainError, digest, marker, toRun } from "./store";
 import type { AutomationService } from "../automations/service";
 import type { KnowledgeService } from "../knowledge/service";
 import type { Grounding, KnowledgeScope } from "@/domain/knowledge";
+import type { LessonService } from "../learning/service";
+import { logEvent } from "../observability/log";
 
 export class OrchestrationService {
   constructor(
@@ -22,7 +24,20 @@ export class OrchestrationService {
     private delegationEnabled: boolean,
     private automations?: AutomationService,
     private knowledge?: KnowledgeService,
+    private lessons?: LessonService,
   ) {}
+  /** Owner-approved lessons for the prompt; a lesson outage never blocks chat. */
+  private async approvedLessons(owner: string): Promise<string[]> {
+    try {
+      return this.lessons ? await this.lessons.approved(owner) : [];
+    } catch (error) {
+      // Visible in logs so a silent loss of lessons is noticed.
+      logEvent("lessons.unavailable", {
+        reason: error instanceof Error ? error.name : "unexpected",
+      });
+      return [];
+    }
+  }
   async agents(): Promise<Agent[]> {
     try {
       const agents = await this.paperclip.listAgents();
@@ -95,7 +110,7 @@ export class OrchestrationService {
         signal,
         offered,
         scope ? grounding : undefined,
-        selection,
+        { ...selection, lessons: await this.approvedLessons(owner) },
       );
       const reply = replySchema.parse(result.reply);
       if (scope && reply.kind !== "answer" && reply.kind !== "memory")

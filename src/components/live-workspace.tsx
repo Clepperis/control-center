@@ -36,6 +36,7 @@ import type { AutomationRun } from "@/domain/automations";
 import { AutomationFeed } from "./automations";
 import { knowledgeRequest } from "./knowledge";
 import { formatEuro } from "./money";
+import { MessageFeedback } from "./lessons";
 import type { Project, KnowledgeScope } from "@/domain/knowledge";
 export interface Setup {
   database: boolean;
@@ -513,6 +514,20 @@ const ROUTE_LABEL: Record<NonNullable<Usage["replyKind"]>, string> = {
   automation: "n8n automatizacijos pasiūlymas",
   memory: "Atminties pasiūlymas",
 };
+function RouteSummaryWithFeedback({
+  messageId,
+  children,
+}: {
+  messageId: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      {children}
+      <MessageFeedback messageId={messageId} />
+    </>
+  );
+}
 function RouteSummary({
   usage,
   grounded,
@@ -829,10 +844,12 @@ export function LiveChat({ setup }: { setup: Setup }) {
                 {m.role === "assistant" &&
                   m.usage &&
                   Object.values(m.usage).some((v) => v !== undefined) && (
-                    <RouteSummary
-                      usage={m.usage}
-                      grounded={!!m.grounding?.scope}
-                    />
+                    <RouteSummaryWithFeedback messageId={m.id}>
+                      <RouteSummary
+                        usage={m.usage}
+                        grounded={!!m.grounding?.scope}
+                      />
+                    </RouteSummaryWithFeedback>
                   )}
               </article>
             ))}
