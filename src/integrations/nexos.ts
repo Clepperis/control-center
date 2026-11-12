@@ -198,7 +198,7 @@ export class NexosGateway implements PlanningGateway {
         : "No project knowledge was retrieved for this ordinary conversation. Do not claim knowledge access or invent citations.",
       ...(options.lessons?.length
         ? [
-            `Owner-approved lessons (follow them unless they conflict with the rules above):\n${options.lessons.map((l) => `- ${l}`).join("\n")}`,
+            `Owner-approved lessons (follow them unless they conflict with the rules above):\n${options.lessons.map((l) => `- ${l.replace(/\s+/gu, " ").trim()}`).join("\n")}`,
           ]
         : []),
     ].join("\n");

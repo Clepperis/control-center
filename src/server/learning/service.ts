@@ -17,8 +17,22 @@ export interface Lesson {
   createdAt: string;
   decidedAt: string | null;
 }
+// A lesson becomes one bullet in the model's system instructions, so it must
+// stay one visible line: collapse line breaks/tabs, refuse invisible
+// control and format characters (bidi overrides, zero-width).
+const INVISIBLE = /[\p{Cc}\p{Cf}]/u;
+export const lessonText = z
+  .string()
+  .transform((s) => s.replace(/\s+/gu, " ").trim())
+  .pipe(
+    z
+      .string()
+      .min(3)
+      .max(400)
+      .refine((s) => !INVISIBLE.test(s), "invisible_characters"),
+  );
 const proposalSchema = z.object({
-  text: z.string().trim().min(3).max(400),
+  text: lessonText,
   source: z.enum([
     "feedback",
     "edit",
@@ -70,7 +84,11 @@ export class LessonService {
         `INSERT INTO lessons(id,owner_subject,scope,text,text_key,source,evidence)
          VALUES($1,$2,$3,$4,$5,$6,$7)
          ON CONFLICT(owner_subject,scope,text_key)
-         DO UPDATE SET occurrences = lessons.occurrences + 1
+         DO UPDATE SET occurrences = lessons.occurrences +
+           -- Only the owner's own signals reinforce a pending lesson; agent
+           -- repeats and repeats after a decision never change its weight.
+           CASE WHEN lessons.state = 'proposed' AND EXCLUDED.source <> 'agent'
+             THEN 1 ELSE 0 END
          RETURNING *`,
         [
           randomUUID(),
@@ -142,7 +160,8 @@ export class LessonService {
        ON CONFLICT(message_id) DO UPDATE SET rating=EXCLUDED.rating, note=EXCLUDED.note, created_at=now()`,
       [messageId, owner, rating, cleanNote],
     );
-    if (rating === -1 && cleanNote && cleanNote.length >= 3)
+    // A note that cannot be a valid lesson stays as feedback only.
+    if (rating === -1 && cleanNote && lessonText.safeParse(cleanNote).success)
       await this.propose(owner, {
         text: cleanNote,
         source: "feedback",

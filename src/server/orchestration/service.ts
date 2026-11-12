@@ -14,6 +14,7 @@ import type { AutomationService } from "../automations/service";
 import type { KnowledgeService } from "../knowledge/service";
 import type { Grounding, KnowledgeScope } from "@/domain/knowledge";
 import type { LessonService } from "../learning/service";
+import { logEvent } from "../observability/log";
 
 export class OrchestrationService {
   constructor(
@@ -29,7 +30,11 @@ export class OrchestrationService {
   private async approvedLessons(owner: string): Promise<string[]> {
     try {
       return this.lessons ? await this.lessons.approved(owner) : [];
-    } catch {
+    } catch (error) {
+      // Visible in logs so a silent loss of lessons is noticed.
+      logEvent("lessons.unavailable", {
+        reason: error instanceof Error ? error.name : "unexpected",
+      });
       return [];
     }
   }
