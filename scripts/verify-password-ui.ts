@@ -92,6 +92,7 @@ page.on("pageerror", (e) => errors.push(e.message));
 const protectedPaths = [
   "/api/workspace",
   "/api/agents",
+  "/api/usage",
   "/api/automations",
   "/api/knowledge",
   "/api/improvements",

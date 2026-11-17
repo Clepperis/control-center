@@ -72,6 +72,7 @@ for (const { mode, nodeEnv } of [
     for (const path of [
       "/api/workspace",
       "/api/agents",
+      "/api/usage",
       "/api/automations",
       "/api/knowledge",
       "/api/knowledge?op=projects",

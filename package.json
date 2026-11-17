@@ -23,6 +23,8 @@
     "verify:connections": "tsx --env-file=.env.local scripts/verify-connections.ts",
     "verify:platform": "tsx --env-file=.env.local scripts/verify-platform.ts",
     "verify:n8n": "tsx --env-file=.env.local scripts/verify-n8n.ts",
+    "usage:sync": "tsx --env-file=.env.local scripts/sync-usage.ts",
+    "usage:watch": "tsx --env-file=.env.local scripts/sync-usage.ts --watch --publish",
     "test:boundary": "tsx scripts/verify-boundary.ts",
     "test:password:ui": "tsx scripts/verify-password-ui.ts",
     "test:backup": "node scripts/verify-backup.mjs",
