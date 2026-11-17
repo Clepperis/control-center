@@ -229,7 +229,13 @@ export function buildToolHubServer(deps: ToolHubDeps): McpServer {
         const lesson = await deps.proposeLesson(text);
         return {
           approvalRef: lesson.id,
-          result: { status: "awaiting_owner_approval", ...lesson },
+          result: {
+            status:
+              lesson.state === "proposed"
+                ? "awaiting_owner_approval"
+                : lesson.state,
+            ...lesson,
+          },
         };
       }),
   );
@@ -240,6 +246,6 @@ export function buildToolHubServer(deps: ToolHubDeps): McpServer {
 export function createToolHubHandler(deps: ToolHubDeps) {
   return createMcpHandler(() => buildToolHubServer(deps), {
     legacy: "stateless",
-    responseMode: "json",
+    maxRequestBodySize: 32000,
   });
 }

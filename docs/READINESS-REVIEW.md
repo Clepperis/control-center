@@ -1,5 +1,9 @@
 # Independent pre-deployment readiness review
 
+Historical Phase 5 review. Its verdict applies to the audited commit. Later
+authentication, deployment and integration evidence is in
+[current status](CURRENT-STATUS.md).
+
 Sanitized for a public repository. No credentials, private addresses, private
 knowledge or contents of the local infrastructure audit are reproduced here.
 

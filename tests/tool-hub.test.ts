@@ -103,7 +103,46 @@ const text = (r: { content?: unknown }) =>
   ((r.content as { type: string; text: string }[])[0] ?? { text: "" }).text;
 
 describe("Tool Hub MCP server", () => {
-  it("lists the four tools with honest read-only annotations", async () => {
+  it("bounds actual UTF-8 bytes even when Content-Length claims a smaller body", async () => {
+    const handler = createToolHubHandler(fakeDeps([], []));
+    const response = await handler.fetch(
+      new Request("http://tool-hub.test/api/mcp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": "1",
+          Accept: "application/json, text/event-stream",
+        },
+        body: JSON.stringify({ padding: "ą".repeat(16001) }),
+      }),
+    );
+    expect(response.status).toBe(413);
+  });
+
+  it("accepts an MCP request at the exact 32,000-byte limit", async () => {
+    const handler = createToolHubHandler(fakeDeps([], []));
+    const message = {
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/list",
+      params: { padding: "" },
+    };
+    message.params.padding = "x".repeat(32000 - JSON.stringify(message).length);
+    const response = await handler.fetch(
+      new Request("http://tool-hub.test/api/mcp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json, text/event-stream",
+        },
+        body: JSON.stringify(message),
+      }),
+    );
+    expect(response.status).toBe(200);
+    await response.text();
+  });
+
+  it("lists the six tools with honest read-only annotations", async () => {
     const client = await connect(fakeDeps([], []));
     const { tools } = await client.listTools();
     const byName = Object.fromEntries(tools.map((t) => [t.name, t]));
@@ -135,6 +174,28 @@ describe("Tool Hub MCP server", () => {
       expect.objectContaining({ tool: "knowledge_search", outcome: "ok" }),
     ]);
     await client.close();
+  });
+
+  it("reports a repeated rejected lesson as rejected, without implying new approval is pending", async () => {
+    const deps = fakeDeps([], []);
+    deps.proposeLesson = async () => ({
+      id: "lesson-rejected",
+      state: "rejected",
+      occurrences: 1,
+    });
+    const client = await connect(deps);
+    try {
+      const result = await client.callTool({
+        name: "propose_lesson",
+        arguments: { text: "Rašyk trumpiau." },
+      });
+      expect(JSON.parse(text(result))).toMatchObject({
+        state: "rejected",
+        status: "rejected",
+      });
+    } finally {
+      await client.close();
+    }
   });
 
   it("only proposes automation runs for owner approval, never runs them", async () => {

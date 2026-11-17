@@ -1,5 +1,8 @@
 # Phase 6 evidence and remaining gates
 
+Historical implementation checkpoint. See [current status](CURRENT-STATUS.md)
+for subsequent protected deployment evidence and remaining recovery work.
+
 Sanitized implementation evidence; detailed local diagnostics/captures stay ignored.
 This is not an Oracle deployment certificate or owner approval.
 

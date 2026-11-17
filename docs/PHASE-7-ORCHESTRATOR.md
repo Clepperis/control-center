@@ -1,7 +1,8 @@
 # Phase 7 plan: one dispatcher for models, n8n and Paperclip
 
-Status: **plan only**. Nothing here is implemented, approved for live use or
-deployed. It builds on Phase 6 (`codex/phase-6-owner-auth-deployment`) and keeps
+Status: **partially implemented**. The slices below record delivery checkpoints;
+see [current status](CURRENT-STATUS.md) for combined integration and live evidence.
+It builds on Phase 6 (`codex/phase-6-owner-auth-deployment`) and keeps
 the owner's decisions of 2026-11-11:
 
 - Keep the custom PostgreSQL orchestrator (no LangGraph) and the custom chat UI.

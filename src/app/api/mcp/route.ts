@@ -26,7 +26,11 @@ async function handle(request: Request): Promise<Response> {
   if (!owner || process.env.DATA_MODE !== "live")
     return Response.json({ error: "tool_hub_unavailable" }, { status: 503 });
   try {
-    return await createToolHubHandler(configuredToolHub(owner)).fetch(request);
+    const response = await createToolHubHandler(configuredToolHub(owner)).fetch(
+      request,
+    );
+    response.headers.set("Cache-Control", "no-store");
+    return response;
   } catch (error) {
     // Setup errors (no database, live mode off) are a 503, never a raw 500.
     logEvent("toolhub.unavailable", {

@@ -11,6 +11,9 @@ import { join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { passwordFixture, testPassword } from "../tests/password-fixture";
 import { setOwnerPassword } from "../src/server/auth/operator";
+import { verifyIntegratedOwnerUi } from "./integration-ui-scenario";
+import { writeUsageSnapshot } from "../src/server/observability/usage-snapshot";
+import { unavailableUsage } from "../src/domain/usage";
 
 const base = "https://127.0.0.1:3443";
 const fixture = await passwordFixture(undefined, base);
@@ -18,6 +21,27 @@ await fixture.bootstrap();
 const knowledge = await mkdtemp(join(tmpdir(), "cc-login-knowledge-"));
 for (const name of ["documents", "history", "conflicts"])
   await mkdir(join(knowledge, name));
+const usageAt = new Date().toISOString();
+await writeUsageSnapshot(join(knowledge, "synthetic-usage.json"), {
+  version: 1,
+  generatedAt: usageAt,
+  from: usageAt,
+  to: usageAt,
+  rows: [
+    {
+      ...unavailableUsage("codex", "local", "synthetic"),
+      status: "available",
+      reason: null,
+      model: "synthetic-codex",
+      records: 1,
+      inputTokens: 30,
+      outputTokens: 12,
+      totalTokens: 42,
+      observedAt: usageAt,
+    },
+  ],
+  quotas: [],
+});
 await mkdir(".local/phase-6", { recursive: true });
 const tls = await generate([{ name: "commonName", value: "localhost" }], {
   algorithm: "sha256",
@@ -61,6 +85,8 @@ const env: NodeJS.ProcessEnv = {
   PAPERCLIP_BASE_URL: "",
   N8N_MCP_TOKEN: "",
   N8N_ORIGIN: "",
+  TOOL_HUB_TOKEN: "synthetic-tool-hub-token-at-least-32-characters",
+  USAGE_SNAPSHOT_FILE: join(knowledge, "synthetic-usage.json"),
   IMPROVEMENT_GITHUB_READ_TOKEN: "",
   IMPROVEMENT_POLICY_FILE: "",
 };
@@ -93,6 +119,8 @@ const protectedPaths = [
   "/api/workspace",
   "/api/agents",
   "/api/usage",
+  "/api/models",
+  "/api/lessons",
   "/api/automations",
   "/api/knowledge",
   "/api/improvements",
@@ -124,6 +152,8 @@ try {
     ).toBe(401);
   for (const path of [
     "/api/chat",
+    "/api/lessons",
+    "/api/feedback",
     "/api/knowledge",
     "/api/improvements",
     "/api/automations",
@@ -208,6 +238,8 @@ try {
     "/automations",
     "/improve",
     "/settings",
+    "/statistics",
+    "/lessons",
   ]) {
     await page.goto(base + path);
     await expect(
@@ -237,6 +269,13 @@ try {
     headers: { Origin: "https://attacker.example" },
   });
   expect(foreign.status()).toBe(403);
+  await verifyIntegratedOwnerUi({
+    page,
+    context,
+    base,
+    db: fixture.db,
+    token: env.TOOL_HUB_TOKEN!,
+  });
   await page.getByRole("button", { name: "Atsijungti", exact: true }).click();
   await expect(page).toHaveURL(base + "/login");
   expect((await context.request.get(base + "/api/workspace")).status()).toBe(

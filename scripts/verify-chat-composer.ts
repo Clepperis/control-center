@@ -34,6 +34,7 @@ const child = spawn(
       NODE_ENV: "development",
       AUTH_MODE: "development",
       DATA_MODE: "live",
+      TOOL_HUB_TOKEN: "",
       CONTROL_CENTER_TEST_DIST: "true",
       APP_ORIGIN: base,
       DATABASE_URL: `postgresql://synthetic:synthetic@127.0.0.1:${address.port}/synthetic`,

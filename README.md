@@ -1,5 +1,10 @@
 # Personal AI Control Center
 
+Read [current status](docs/CURRENT-STATUS.md) and
+[integration validation](docs/INTEGRATION-VALIDATION.md) for the latest handoff.
+This candidate combines the pending feature branches; phase documents retain
+historical context.
+
 A self-hostable AI workspace for one owner. The interface is Lithuanian; code and developer documentation are English. Phase 1 provides a polished demo. Phase 2 adds durable conversations and owner-confirmed delegation. Phase 3 adds curated n8n automation. Phase 4 adds private Markdown project knowledge, retrieval, citations and reviewed memory. Phase 5 adds the dedicated Platform Engineer workspace with scoped plans, implementation consent, durable coding delegation, exact candidate evidence and separate manual integration consent. Live model/coding execution verification remains pending.
 
 ## Local demo

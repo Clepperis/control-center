@@ -15,7 +15,9 @@ jobs:
       APP_ORIGIN: http://127.0.0.1:3000
       LIVE_MODEL_ENABLED: "false"
       LIVE_DELEGATION_ENABLED: "false"
+      N8N_EXECUTION_ENABLED: "false"
       IMPROVEMENT_EXECUTOR_ENABLED: "false"
+      TOOL_HUB_TOKEN: ""
       BROWSER_CHANNEL: chromium
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -29,6 +31,8 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Lint
         run: npm run lint
+      - name: Formatting
+        run: npm run format:check
       - name: Types
         run: npm run typecheck
       - name: Tests
@@ -63,6 +67,8 @@ jobs:
             .local/screenshots/*.png
             .local/chat-composer/after-*.png
             .local/chat-composer/verification.json
+            .local/phase-6/integration-*.png
+            .local/phase-6/password-ui.json
           retention-days: 7
   arm64-release:
     # Public repository, free standard native ARM64 runner. Never deploys.
