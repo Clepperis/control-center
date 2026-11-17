@@ -89,7 +89,6 @@ export function DemoChat() {
       />
       <div className="demo-chat">
         <div className="demo-chat-intro">
-          <Badge tone="accent">Demonstracinis režimas</Badge>
           <h2 className="text-xl font-semibold mt-5">
             Ką norėtumėte nuveikti?
           </h2>
@@ -99,6 +98,9 @@ export function DemoChat() {
           </p>
         </div>
         <div>
+          <p className="muted text-xs mb-3">
+            Demonstracinis režimas · tik vietiniai juodraščiai
+          </p>
           <DraftForm
             kind="chat"
             label="Jūsų mintis"
