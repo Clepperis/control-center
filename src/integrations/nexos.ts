@@ -20,6 +20,7 @@ import {
   type ModelTask,
   type ModelTier,
 } from "@/server/models/routing";
+import { analyzeTask } from "@/server/models/analysis";
 export interface GatewayResult {
   reply: ModelReply;
   usage: Usage | null;
@@ -121,6 +122,7 @@ export class NexosGateway implements PlanningGateway {
     signal?: AbortSignal,
     ownerTier?: ModelTier | null,
     ownerModel?: string | null,
+    suggestedTier?: ModelTier | null,
   ): Promise<ModelChoice> {
     if (ownerTier && ownerModel) throw new IntegrationError("malformed");
     if (ownerModel) {
@@ -143,6 +145,7 @@ export class NexosGateway implements PlanningGateway {
       task,
       (id) => ids.has(id),
       ownerTier,
+      suggestedTier,
     );
     if (!choice) throw new IntegrationError("configuration");
     return choice;
@@ -173,12 +176,22 @@ export class NexosGateway implements PlanningGateway {
       messages.some((m) => m.content.length > 10000)
     )
       throw new IntegrationError("malformed");
-    const route = await this.resolve(
+    const owner = !!(options.tier || options.model);
+    const latest = [...messages].reverse().find((m) => m.role === "user");
+    const analysis = owner
+      ? null
+      : analyzeTask(latest?.content ?? "", !!grounding);
+    const resolved = await this.resolve(
       grounding ? "knowledge" : "chat",
       signal,
       options.tier,
       options.model,
+      analysis?.tier,
     );
+    const route: ModelChoice = {
+      ...resolved,
+      reason: owner ? "owner" : analysis?.reason,
+    };
     const eligible = agents.filter((a) => a.eligible);
     const system = [
       "You are a single-owner personal control center. Reply in natural Lithuanian.",

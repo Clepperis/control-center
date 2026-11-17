@@ -12,6 +12,8 @@ export interface ModelChoice {
   fallback: boolean;
   /** True when the owner picked the tier for this turn. */
   override: boolean;
+  /** Why this tier was requested ("owner" or a task-analysis reason). */
+  reason?: string;
 }
 
 export const MODEL_TIERS: readonly ModelTier[] = ["fast", "standard", "strong"];
@@ -31,9 +33,10 @@ export function chooseModel(
   task: ModelTask,
   available: (model: string) => boolean,
   ownerTier?: ModelTier | null,
+  suggestedTier?: ModelTier | null,
 ): ModelChoice | null {
   const override = !!ownerTier;
-  const requestedTier = ownerTier ?? TASK_TIER[task];
+  const requestedTier = ownerTier ?? suggestedTier ?? TASK_TIER[task];
   const rejected = new Set<string>();
   for (let i = TIER_ORDER.indexOf(requestedTier); i >= 0; i--) {
     const tier = TIER_ORDER[i];

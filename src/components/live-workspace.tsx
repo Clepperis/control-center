@@ -542,7 +542,11 @@ function RouteSummary({
           <dd>
             {usage.model}
             {usage.tier ? ` · ${TIER_LABEL[usage.tier]}` : ""}
-            {usage.override ? " · override" : ""}
+            {usage.override
+              ? " · override"
+              : usage.routeReason
+                ? ` · auto: ${usage.routeReason}`
+                : ""}
             {usage.fallback
               ? " · fallback: pageidautas tier nepasiekiamas, naudotas pigesnis"
               : ""}

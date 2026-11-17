@@ -151,6 +151,7 @@ export class OrchestrationService {
                     tier: result.route.tier,
                     fallback: result.route.fallback,
                     override: result.route.override,
+                    routeReason: result.route.reason,
                   }),
                   replyKind: reply.kind,
                 })
