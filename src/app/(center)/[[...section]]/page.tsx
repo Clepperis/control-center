@@ -13,6 +13,7 @@ import { setupStatus, getStore } from "@/server/runtime";
 import { usageStatistics } from "@/server/observability/stats";
 import { logEvent } from "@/server/observability/log";
 import { UsageStatisticsView } from "@/components/statistics";
+import { LessonsWorkspace } from "@/components/lessons";
 import { AutomationWorkspace } from "@/components/automations";
 import { ImprovementWorkspace } from "@/components/improvements";
 import {
@@ -73,6 +74,7 @@ export default async function Page({
     if (section[0] === "chat") return <LiveChat setup={setupStatus()} />;
     if (section[0] === "agents") return <LiveAgents />;
     if (section[0] === "knowledge") return <KnowledgeWorkspace />;
+    if (section[0] === "lessons") return <LessonsWorkspace live />;
     if (section[0] === "projects")
       return (
         <>
@@ -109,6 +111,8 @@ export default async function Page({
       return <ImprovementWorkspace live={data.mode === "live"} />;
     case "settings":
       return <Settings data={data} authMode={session.mode} />;
+    case "lessons":
+      return <LessonsWorkspace live={data.mode === "live"} />;
     default:
       notFound();
   }

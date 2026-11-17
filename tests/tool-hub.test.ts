@@ -75,6 +75,12 @@ function fakeDeps(calls: ToolCallRecord[], proposed: unknown[]): ToolHubDeps {
       proposed.push({ requestId, key, text });
       return { id: "run-1", state: "awaiting_confirmation" };
     },
+    async proposeLesson() {
+      return { id: "lesson-1", state: "proposed", occurrences: 1 };
+    },
+    async approvedLessons() {
+      return ["Rašyk trumpai."];
+    },
     audit: {
       async record(entry) {
         calls.push(entry);
@@ -104,6 +110,8 @@ describe("Tool Hub MCP server", () => {
     expect(Object.keys(byName).sort()).toEqual([
       "knowledge_search",
       "list_automations",
+      "list_lessons",
+      "propose_lesson",
       "request_automation_run",
       "usage_stats",
     ]);
