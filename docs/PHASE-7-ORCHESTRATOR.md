@@ -143,6 +143,17 @@ Each slice is a separate branch/PR with tests; live switches stay off.
    Turn/run failure statistics beyond model calls are not included.
 5. **Paperclip task-level proposals.** Goal/budget/target fields, status and
    approval display. Requires verified application credentials first.
+   _Implemented on `boss/paperclip-task-proposals` (deterministic substitutes
+   only; no real Paperclip call, credentials still unverified):_ the plan carries
+   `budgetCeiling` (EUR, 0.01–10000, required on model proposals, optional when
+   reading older stored plans); goal = `objective`, acceptance criteria =
+   `completionCriteria`, target agent = `agentId` (null: Paperclip routes the
+   task itself and the unassigned proposal is confirmable). The ceiling is
+   written into the issue description; Paperclip-side enforcement is not
+   assumed. The run card shows status, comments, approvals read from
+   `GET /issues/:id/approvals` and the native link; unreadable approvals and the
+   missing Paperclip budget-usage contract are shown as explicit notices.
+   Confirmation, one-attempt and unknown-outcome rules are unchanged.
 6. **n8n authoring capability check.** Read-only `tools/list` probe with the
    application token; document results. Gate for slices 7–9.
    _Done 2026-11-11 with the owner's application MCP token (read-only

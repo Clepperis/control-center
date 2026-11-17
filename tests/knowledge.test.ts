@@ -453,6 +453,7 @@ describe("grounded orchestration (deterministic model substitutes, not model qua
               agentId: null,
               completionCriteria: ["bad"],
               constraints: [],
+              budgetCeiling: { amount: 5, currency: "EUR" as const },
             },
           },
           usage: null,

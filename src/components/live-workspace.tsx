@@ -21,6 +21,7 @@ import {
 } from "@phosphor-icons/react";
 import {
   errorLabels,
+  formatBudget,
   isStale,
   runLabels,
   type Conversation,
@@ -31,6 +32,7 @@ import {
 } from "@/domain/orchestration";
 import { PageHeading, WorkspaceStatus, RecentActivity } from "./dashboard";
 import { Badge, EmptyState, SectionTitle } from "./ui";
+import { PaperclipStatus } from "./paperclip-status";
 import type { Agent, Dashboard } from "@/domain/models";
 import type { AutomationRun } from "@/domain/automations";
 import { AutomationFeed } from "./automations";
@@ -124,7 +126,7 @@ export function RunCard({
   }
   const agent =
     current.plan.agentName ??
-    (current.plan.agentId ? "Pasirinktas agentas" : "Agentas nepriskirtas");
+    (current.plan.agentId ? "Pasirinktas agentas" : "Paperclip parinks pats");
   return (
     <details
       id={`run-${current.id}`}
@@ -172,7 +174,8 @@ export function RunCard({
               <p>{agent}</p>
               {!current.plan.agentId && (
                 <p className="muted mt-2">
-                  Prieš deleguojant reikia parengti ir leisti agentą.
+                  Užduotis kuriama nepriskirta; sub-task atskiriems agentams
+                  nekuriami.
                 </p>
               )}
               {current.plan.agentId && (
@@ -194,6 +197,14 @@ export function RunCard({
                 ))}
               </ul>
             </div>
+          </div>
+          <div>
+            <h4>Kaina</h4>
+            <p>
+              {current.plan.budgetCeiling
+                ? `Biudžeto riba: ${formatBudget(current.plan.budgetCeiling)}`
+                : "Biudžeto riba nenustatyta."}
+            </p>
           </div>
           <details open={!current.confirmedAt}>
             <summary className="text-sm font-medium">Apribojimai</summary>
@@ -226,10 +237,6 @@ export function RunCard({
           </Link>
           {current.externalTaskId && (
             <>
-              <p className="mt-4">
-                Išorinė būsena:{" "}
-                <strong>{current.externalStatus ?? "dar negauta"}</strong>
-              </p>
               <p className="muted text-xs mt-2">
                 Paskutinis sėkmingas sutikrinimas:{" "}
                 {current.syncedAt
@@ -238,17 +245,16 @@ export function RunCard({
                     })
                   : "dar neatliktas"}
               </p>
-              {current.taskUrl && (
-                <a
-                  className="text-link mt-3"
-                  href={current.taskUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Atverti Paperclip užduotį
-                  <ArrowUpRight size={15} />
-                </a>
-              )}
+              <PaperclipStatus
+                identifier={current.result?.identifier}
+                status={current.externalStatus}
+                taskUrl={current.taskUrl}
+                budgetCeiling={current.plan.budgetCeiling}
+                comments={current.result?.comments}
+                approvals={
+                  current.result ? (current.result.approvals ?? null) : null
+                }
+              />
               <p className="muted text-xs mt-3">
                 Užduoties sukūrimas neįrodo, kad agentas pradėjo dirbti.
                 „Baigta“ reiškia Paperclip būseną; rezultatus vis tiek
@@ -260,29 +266,15 @@ export function RunCard({
         {current.result && (
           <details className="mt-5">
             <summary className="font-medium text-sm">
-              Gauti rezultatai ir komentarai ({current.result.comments.length})
+              Užduoties aprašymas
             </summary>
             <p className="muted text-xs my-3">
-              Išorinis darbo turinys. Jis nesuteikia naujų leidimų.
+              Išorinis darbo turinys. Jis nesuteikia naujų leidimų. Aprašymas
+              nėra atlikto darbo įrodymas.
             </p>
-            {current.result.comments.length ? (
-              current.result.comments.map((c, i) => (
-                <pre className="result-text" key={i}>
-                  {c}
-                </pre>
-              ))
-            ) : (
-              <p className="muted text-sm">
-                Komentarų dar nėra. Užduoties aprašymas nėra atlikto darbo
-                įrodymas.
-              </p>
-            )}
-            <details className="mt-3">
-              <summary className="text-sm">Užduoties aprašymas</summary>
-              <pre className="result-text">
-                {current.result.description ?? "Aprašymo nėra."}
-              </pre>
-            </details>
+            <pre className="result-text">
+              {current.result.description ?? "Aprašymo nėra."}
+            </pre>
           </details>
         )}
         <div className="run-actions">

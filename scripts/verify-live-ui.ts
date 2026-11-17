@@ -57,6 +57,7 @@ const service = new OrchestrationService(
             agentId,
             completionCriteria: ["Vienas pasiūlymas"],
             constraints: ["Tik deterministinis bandymas"],
+            budgetCeiling: { amount: 5, currency: "EUR" as const },
           },
         },
         usage: null,
