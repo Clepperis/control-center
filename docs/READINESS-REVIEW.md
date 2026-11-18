@@ -1,5 +1,11 @@
 # Independent pre-deployment readiness review
 
+For the 2026-11-18 local release review, use
+[RELEASE-CANDIDATE.md](RELEASE-CANDIDATE.md). Fresh local PostgreSQL restore and
+migration evidence is separate from blocked native execution and unperformed
+host/off-host verification. The live-model activation and old-schema rollback
+conflicts remain blockers; no readiness claim is inferred from the checks below.
+
 Historical Phase 5 review. Its verdict applies to the audited commit. Later
 authentication, deployment and integration evidence is in
 [current status](CURRENT-STATUS.md).
