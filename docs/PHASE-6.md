@@ -1,5 +1,11 @@
 # Phase 6: single-owner authentication and controlled Oracle releases
 
+For the current exact review, use [RELEASE-CANDIDATE.md](RELEASE-CANDIDATE.md).
+It pins the post-#21 ARM64 artifact and documents the owner approvals and host
+rollback gate. The provisioning narrative below is historical. An update
+preserves the existing immutable release, protected configuration, identity
+and HTTPS setup.
+
 Implementation and production authorization are separate. This document records
 the implemented path and the remaining live gates. No Oracle/Hostinger settings,
 DNS, certificates, Drive authorization or off-host data have been changed.

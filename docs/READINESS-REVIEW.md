@@ -1,5 +1,10 @@
 # Independent pre-deployment readiness review
 
+The [current release candidate](RELEASE-CANDIDATE.md) records post-#21 Linux ARM64
+CI, earlier local PostgreSQL rehearsal evidence and the pending host/off-host
+owner approvals. A rollback to the six-migration release requires its matching
+data recovery point.
+
 Historical Phase 5 review. Its verdict applies to the audited commit. Later
 authentication, deployment and integration evidence is in
 [current status](CURRENT-STATUS.md).
