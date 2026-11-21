@@ -1,5 +1,9 @@
 # Integration validation — 2026-11-17
 
+The dated integration evidence below is retained. A separate local-only release
+review was repeated on 2026-11-18; see the appended record and the exact
+[release-candidate package](RELEASE-CANDIDATE.md).
+
 Candidate: `codex/integration-readiness`, based on development target `11b1475`.
 The [current status](CURRENT-STATUS.md) identifies the combined sources and the
 remaining external dependencies. This is a self-review, not an independent review.
@@ -86,3 +90,61 @@ The dependency audit is not clean: the unpatched picomatch advisory and transiti
 production dependency path are documented in current status. Recovery also
 remains incomplete: local encryption tests do not establish off-host recovery
 or a compatible production rollback.
+
+## 2026-11-18 local release-package revalidation
+
+Validated source `6818cefc63d167687a0227fa592d4879033b38d7`, the exact starting
+`origin/codex/integration-readiness` revision for `codex/release-candidate-package`.
+Checks ran in an isolated detached source copy with no `.env.local`, cleared
+inherited application/PG credentials, external execution disabled and telemetry
+off. Node 24.16.0 / npm 11.13.0 / Windows x64; dependencies installed with the
+requested **`npm ci`**, without changing the lockfile or suppressing the audit.
+
+| Exact command                                              | Exit | Result                                                                                                 |
+| ---------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------ |
+| `npm ci`                                                   | 0    | Clean locked install; audit findings retained                                                          |
+| `npm run lint`                                             | 0    | Passed                                                                                                 |
+| `npm run typecheck`                                        | 0    | Passed                                                                                                 |
+| `npm test`                                                 | 0    | 267 tests in 27 files                                                                                  |
+| `npm run build`                                            | 0    | Production Windows build                                                                               |
+| `npm run build:runtime`                                    | 0    | Worker/operator bundles                                                                                |
+| `npm run test:boundary`                                    | 0    | Production access guards                                                                               |
+| `npm run test:backup`                                      | 0    | Local cryptography/negative controls; default mode has no database restore                             |
+| `npm run test:password:ui`                                 | 0    | Actual built app with synthetic loopback TLS/PG protocol; MCP/lessons/feedback/usage and access checks |
+| `npm run test:ui:live`                                     | 0    | Synthetic orchestration/n8n/knowledge/Platform Engineer workflows                                      |
+| `npm run test:chat:ui`                                     | 0    | Composer/recovery/accessibility                                                                        |
+| `npm run test:ui`                                          | 0    | Demo navigation, persistence, dialogs and reset                                                        |
+| Initial `npm run test:a11y` without `UI_BASE_URL`          | 1    | Wrong local default origin; `Cannot GET /chat`                                                         |
+| `npm run test:a11y` with `UI_BASE_URL=<LOCAL_DEMO_ORIGIN>` | 0    | Same suite against isolated app: ten routes, three widths, AA/keyboard/reflow                          |
+| `npm run build:release`                                    | 1    | Correctly refused: `native_linux_arm64_required`                                                       |
+| `node scripts/verify-native-artifact.mjs`                  | 1    | Native-platform assertion before artifact access                                                       |
+
+The native commands were attempted, not skipped or weakened. They do **not**
+establish ARM64 verification on this machine. The previously cached 176,859,930-byte
+artifact still embeds the tested source SHA; its tar and manifest hashes and all
+nine SQL checksums were rechecked locally. It was not rebuilt, extracted or
+executed. Historical 2026-11-17 CI receipts do not become fresh native/Oracle proof.
+
+Separate real PostgreSQL 18.6 Windows rehearsal: initialize a new loopback cluster;
+apply 001–009 to an empty DB; rerun unchanged; take a pre-change custom dump and
+Markdown/history backup of a populated 001–006 fixture; apply 007–009 preserving
+data; reapply shipped grants and test auth/schema denials. A transaction-level
+lock observation found `ShareRowExclusiveLock` on existing `messages` during 009.
+The old six-migration schema check refused the upgraded database as expected.
+
+The same local rehearsal used real `pg_dump`, rclone encryption/decryption,
+ciphertext integrity checks, real `pg_restore` into another scratch DB and
+`node --import tsx scripts/restore-check.ts` (exit 0). Result: one owner, one
+document and two historical revisions restored and verified. Off-host storage
+and retrieval used local directories; no-writer/systemd observation was a
+deterministic substitute. No Google Drive, Oracle, live model, DNS, certificate,
+Paperclip, budget, branch-protection or production-secret operation was performed.
+
+Command/timestamp/exit logs, schema catalogs, receipts and scratch data are
+retained privately. No product code changed. Local orchestration mistakes
+(fixture import depth, wrapper path after changing directory, and a lost explicit
+demo origin) were corrected before complete reruns. The initial a11y failure is
+recorded, and all assertions were retained. Successful check results above come
+from the actual reruns. Unsupported-platform failures remain
+explicit. Required target approvals and the live-model-policy/rollback blockers
+are listed in the release-candidate package.

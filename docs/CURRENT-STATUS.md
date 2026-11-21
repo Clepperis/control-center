@@ -67,7 +67,12 @@ not repaired.
 
 ## Next steps
 
-1. Review the candidate and its checks, integrate into the development target,
+1. Review the [2026-11-18 release-candidate package](RELEASE-CANDIDATE.md) first:
+   exact cached artifact, fresh local checks, migration/grant and real local
+   PostgreSQL restore evidence. Native execution was blocked on Windows. Resolve
+   the live-model activation-policy mismatch and incompatible old-schema rollback
+   before production approval. No real service was rechecked in that local task.
+   Review the candidate and its checks, integrate into the development target,
    and explicitly reconcile superseded PRs. Choose the eventual `main` path.
 2. Build the exact integrated native artifact. Review all nine migrations,
    coordinate a data/Markdown backup, apply SQL separately and reapply runtime

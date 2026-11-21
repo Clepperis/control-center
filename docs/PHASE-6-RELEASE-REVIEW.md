@@ -1,5 +1,15 @@
 # Private release review worksheet (template, not authorization)
 
+The current public approval-package draft is
+[RELEASE-CANDIDATE.md](RELEASE-CANDIDATE.md). Keep this worksheet as the single
+private operator template; do not copy target values into the public draft.
+For an existing installation, preserve the previous release/configuration and
+record actual current state instead of repeating initial provisioning/bootstrap.
+The public draft identifies two unresolved gates: the present activation code
+requires model calls off while the desired update preserves chat on, and a
+six-migration previous release fails the upgraded nine-migration schema check.
+Neither a placeholder nor an attestation resolves those gates.
+
 Copy this worksheet into protected operator storage. Never fill real addresses,
 credential values, private logs or audit text into this public file. No live
 deployment package is complete until every unresolved field is backed by evidence.
