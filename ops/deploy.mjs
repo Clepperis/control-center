@@ -45,6 +45,7 @@ export function validateReview(
   );
   requireValue(
     review.executionEnabled === false &&
+      typeof review.liveModelEnabled === "boolean" &&
       review.migrationsAppliedSeparately === true,
     "unreviewed_effects",
   );
@@ -162,7 +163,38 @@ export async function verifyRelease(
   );
   return { release, manifest };
 }
-export async function verifyConfig(directory, commit, hashes, hostname) {
+/**
+ * Delegation, n8n execution and the coding executor must stay off. Live chat
+ * may be on only when the owner-approved review says so, and the runtime
+ * configuration must match that decision exactly.
+ * @param {Record<string, string>} env
+ * @param {boolean} liveModelEnabled
+ */
+export function checkExecutionFlags(env, liveModelEnabled) {
+  for (const flag of [
+    "LIVE_DELEGATION_ENABLED",
+    "N8N_EXECUTION_ENABLED",
+    "IMPROVEMENT_EXECUTOR_ENABLED",
+  ])
+    requireValue(env[flag] === "false", "execution_must_remain_disabled");
+  if (liveModelEnabled)
+    requireValue(
+      env.LIVE_MODEL_ENABLED === "true",
+      "live_model_not_as_reviewed",
+    );
+  else
+    requireValue(
+      env.LIVE_MODEL_ENABLED === "false",
+      "execution_must_remain_disabled",
+    );
+}
+export async function verifyConfig(
+  directory,
+  commit,
+  hashes,
+  hostname,
+  liveModelEnabled,
+) {
   const result = {};
   for (const role of ["web", "worker"]) {
     const file = await managed(
@@ -187,13 +219,7 @@ export async function verifyConfig(directory, commit, hashes, hostname) {
       ),
       "privileged_runtime_configuration",
     );
-    for (const flag of [
-      "LIVE_MODEL_ENABLED",
-      "LIVE_DELEGATION_ENABLED",
-      "N8N_EXECUTION_ENABLED",
-      "IMPROVEMENT_EXECUTOR_ENABLED",
-    ])
-      requireValue(env[flag] === "false", "execution_must_remain_disabled");
+    checkExecutionFlags(env, liveModelEnabled);
     requireValue(
       env.DATA_MODE === "live" &&
         env.KNOWLEDGE_ROOT === "/var/lib/control-center/knowledge" &&
@@ -337,6 +363,7 @@ async function main() {
       review.commit,
       review.configSha256,
       review.hostname,
+      review.liveModelEnabled,
     );
     if (review.previous) {
       await verifyRelease(
@@ -349,6 +376,7 @@ async function main() {
         review.previous.commit,
         review.previous.configSha256,
         review.hostname,
+        review.liveModelEnabled,
       );
     }
     const run = async (commit, script, args = []) =>

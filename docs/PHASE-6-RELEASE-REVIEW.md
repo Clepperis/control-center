@@ -85,6 +85,7 @@ prove actual cloud/firewall rules, OS account permissions or owner approval.
   "port": 3210,
   "dataRoot": "/var/lib/control-center",
   "executionEnabled": false,
+  "liveModelEnabled": true,
   "migrationsAppliedSeparately": true,
   "schema": [
     {
@@ -98,6 +99,13 @@ prove actual cloud/firewall rules, OS account permissions or owner approval.
   "previous": null
 }
 ```
+
+`liveModelEnabled` is the owner's explicit decision about Nexos chat. When
+`true`, both `web.env` and `worker.env` (and the previous release's files, for
+rollback) must contain `LIVE_MODEL_ENABLED=true`; when `false`, they must contain
+`false`. `LIVE_DELEGATION_ENABLED`, `N8N_EXECUTION_ENABLED` and
+`IMPROVEMENT_EXECUTOR_ENABLED` must always be `false`; `executionEnabled` stays
+`false` and refers to those three.
 
 Copy the complete ordered `schema` array from the exact release's `release.json`;
 the number of migrations grows with the release. Do not truncate it to an earlier
