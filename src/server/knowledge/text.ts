@@ -64,7 +64,7 @@ const stop = new Set([
   "kur",
   "kada",
 ]);
-export function searchQuery(text: string) {
+export function searchTerms(text: string) {
   return [...new Set(lexemes(text).filter((t) => t.length > 1 && !stop.has(t)))]
     .slice(0, 12)
     .map((t) => {
@@ -76,8 +76,16 @@ export function searchQuery(text: string) {
             )
           : t;
       return `'${stem}':*`;
-    })
-    .join(" & ");
+    });
+}
+export function searchQuery(text: string) {
+  return searchTerms(text).join(" & ");
+}
+// Short queries must match every term. Longer natural questions may omit up
+// to a third of their words, which still excludes passages sharing only
+// generic vocabulary with the question.
+export function requiredMatches(terms: number) {
+  return terms <= 2 ? terms : Math.ceil((terms * 2) / 3);
 }
 export interface Chunk {
   passage: number;

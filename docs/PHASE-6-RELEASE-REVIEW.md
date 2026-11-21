@@ -47,7 +47,7 @@ application access; separately authorized Drive OAuth/crypt recovery and deploym
 operator access. Initial integration credentials are absent, all execution switches
 false, and no new schedule is installed. Coding executor gets none of these secrets.
 
-Review migration 006 SQL and exact before/after manifests. Record either a verified
+Review all migration SQL through this release and exact before/after manifests. Record either a verified
 empty new database or a coordinated pre-change dump+Markdown/history and isolated
 restore proof. Account/bootstrap is a separately recorded operator action after
 SQL/grants. No startup migration. Phase 5 SQL remains usable but Phase 5's missing
@@ -87,7 +87,10 @@ prove actual cloud/firewall rules, OS account permissions or owner approval.
   "executionEnabled": false,
   "migrationsAppliedSeparately": true,
   "schema": [
-    { "name": "ALL_SIX_EXACT_MIGRATION_NAMES", "checksum": "EACH_HASH" }
+    {
+      "name": "EACH_EXACT_MIGRATION_NAME_FROM_RELEASE_MANIFEST",
+      "checksum": "EACH_HASH"
+    }
   ],
   "configSha256": { "web": "EXACT_HASH", "worker": "EXACT_HASH" },
   "networkPlanSha256": "EXACT_HASH",
@@ -95,6 +98,12 @@ prove actual cloud/firewall rules, OS account permissions or owner approval.
   "previous": null
 }
 ```
+
+Copy the complete ordered `schema` array from the exact release's `release.json`;
+the number of migrations grows with the release. Do not truncate it to an earlier
+phase's migration count. Activation requires an exact name/checksum/order match
+against the verified artifact, and the database compatibility check still rejects
+missing, changed or newer applied migrations. Deployment never applies migrations.
 
 For existing data, `recovery` instead contains `emptyInitialDatabase:false`,
 `proofSha256` and `backupReceiptSha256` matching the protected

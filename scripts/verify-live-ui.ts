@@ -57,6 +57,7 @@ const service = new OrchestrationService(
             agentId,
             completionCriteria: ["Vienas pasiūlymas"],
             constraints: ["Tik deterministinis bandymas"],
+            budgetCeiling: { amount: 5, currency: "EUR" as const },
           },
         },
         usage: null,
@@ -131,6 +132,7 @@ const child = spawn(
       NODE_ENV: "development",
       AUTH_MODE: "development",
       DATA_MODE: "live",
+      TOOL_HUB_TOKEN: "",
       CONTROL_CENTER_TEST_DIST: "true",
       APP_ORIGIN: base,
       DATABASE_URL: `postgresql://synthetic:synthetic@127.0.0.1:${address.port}/synthetic`,
@@ -292,9 +294,15 @@ try {
   await expect(
     page.getByText("Paperclip: baigta", { exact: true }),
   ).toBeVisible();
-  await page
-    .getByText("Gauti rezultatai ir komentarai (1)", { exact: true })
-    .click();
+  await expect(
+    page.getByRole("heading", { name: "Komentarai", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "Patvirtinimų duomenų gauti nepavyko. Patikrinkite Paperclip.",
+      { exact: true },
+    ),
+  ).toBeVisible();
   await expect(
     page.getByText("Sintetinis rezultatas: siūloma viena pataisa.", {
       exact: true,

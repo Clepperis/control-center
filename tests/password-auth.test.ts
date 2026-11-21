@@ -15,6 +15,12 @@ import {
 } from "../src/server/auth/password";
 import { setOwnerPassword } from "../src/server/auth/operator";
 import { safeDestination } from "../src/server/auth/password-http";
+
+it("allows returning to the statistics and lessons pages after login", () => {
+  expect(safeDestination("/statistics")).toBe("/statistics");
+  expect(safeDestination("/lessons")).toBe("/lessons");
+  expect(safeDestination("/lessons?next=https://attacker.example")).toBe("/");
+});
 import { Store } from "../src/server/orchestration/store";
 
 describe("single-owner password boundary (real library + pg wire + SQL engine)", () => {

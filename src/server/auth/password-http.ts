@@ -37,6 +37,8 @@ export function safeDestination(value: string | null | undefined) {
     "/knowledge",
     "/improve",
     "/settings",
+    "/statistics",
+    "/lessons",
   ].includes(value ?? "")
     ? value!
     : "/";

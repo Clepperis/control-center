@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { resolve } from "node:path";
+import { usageSnapshotState } from "@/server/observability/usage-snapshot";
 import { requireOwner } from "@/server/auth/session";
 import { getDashboard, getLiveWorkspace } from "@/data/provider";
 import {
@@ -11,6 +13,7 @@ import { setupStatus, getStore } from "@/server/runtime";
 import { usageStatistics } from "@/server/observability/stats";
 import { logEvent } from "@/server/observability/log";
 import { UsageStatisticsView } from "@/components/statistics";
+import { LessonsWorkspace } from "@/components/lessons";
 import { AutomationWorkspace } from "@/components/automations";
 import { ImprovementWorkspace } from "@/components/improvements";
 import {
@@ -51,6 +54,18 @@ export default async function Page({
   }
   const { section = [] } = await params;
   if (section.length > 1) notFound();
+  if (section[0] === "statistics") {
+    const usage = await usageSnapshotState(
+      process.env.USAGE_SNAPSHOT_FILE || resolve(".local/usage/snapshot.json"),
+    );
+    return (
+      <UsageStatisticsView
+        now={usage.now}
+        stats={process.env.DATA_MODE === "live" ? await liveStatistics() : null}
+        snapshot={usage.snapshot}
+      />
+    );
+  }
   const live =
     process.env.DATA_MODE !== "demo" ? await getLiveWorkspace() : null;
   const data = live?.data ?? (await getDashboard());
@@ -59,8 +74,7 @@ export default async function Page({
     if (section[0] === "chat") return <LiveChat setup={setupStatus()} />;
     if (section[0] === "agents") return <LiveAgents />;
     if (section[0] === "knowledge") return <KnowledgeWorkspace />;
-    if (section[0] === "statistics")
-      return <UsageStatisticsView stats={await liveStatistics()} />;
+    if (section[0] === "lessons") return <LessonsWorkspace live />;
     if (section[0] === "projects")
       return (
         <>
@@ -97,8 +111,8 @@ export default async function Page({
       return <ImprovementWorkspace live={data.mode === "live"} />;
     case "settings":
       return <Settings data={data} authMode={session.mode} />;
-    case "statistics":
-      return <UsageStatisticsView stats={null} />;
+    case "lessons":
+      return <LessonsWorkspace live={data.mode === "live"} />;
     default:
       notFound();
   }

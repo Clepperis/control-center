@@ -15,7 +15,9 @@ jobs:
       APP_ORIGIN: http://127.0.0.1:3000
       LIVE_MODEL_ENABLED: "false"
       LIVE_DELEGATION_ENABLED: "false"
+      N8N_EXECUTION_ENABLED: "false"
       IMPROVEMENT_EXECUTOR_ENABLED: "false"
+      TOOL_HUB_TOKEN: ""
       BROWSER_CHANNEL: chromium
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -29,6 +31,8 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Lint
         run: npm run lint
+      - name: Formatting
+        run: npm run format:check
       - name: Types
         run: npm run typecheck
       - name: Tests
@@ -36,7 +40,17 @@ jobs:
       - name: Build
         run: npm run build
       - name: Browser dependencies
-        run: npx playwright install --with-deps chromium
+        # Ubuntu mirrors were unreachable for hours on 2026-11-11. Retry, then
+        # fall back to the browser alone: ubuntu-latest already ships the
+        # system libraries Chrome needs, so the UI checks still use a real browser.
+        run: |
+          for attempt in 1 2 3; do
+            npx playwright install --with-deps chromium && exit 0
+            echo "System dependency install failed (attempt $attempt); retrying in 20s."
+            sleep 20
+          done
+          echo "::warning::Ubuntu package mirrors unavailable; installing Chromium without system packages."
+          npx playwright install chromium
       - name: Production authentication boundary
         run: npm run test:boundary
       - name: Production password HTTPS desktop and mobile
@@ -53,6 +67,8 @@ jobs:
             .local/screenshots/*.png
             .local/chat-composer/after-*.png
             .local/chat-composer/verification.json
+            .local/phase-6/integration-*.png
+            .local/phase-6/password-ui.json
           retention-days: 7
   arm64-release:
     # Public repository, free standard native ARM64 runner. Never deploys.

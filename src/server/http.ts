@@ -90,8 +90,19 @@ export async function api(fn: (owner: string) => Promise<unknown>) {
               : 502,
         },
       );
+    // Messages and stacks may carry connection strings or private content.
+    // The error class and PostgreSQL SQLSTATE are enough to tell a missing
+    // migration from an unreachable server or an application defect.
+    const sqlState = (error as { code?: unknown } | null)?.code;
     console.error(
-      JSON.stringify({ event: "application_request_failed", code: "internal" }),
+      JSON.stringify({
+        event: "application_request_failed",
+        code: "internal",
+        kind: error instanceof Error ? error.name : typeof error,
+        ...(typeof sqlState === "string" && /^[0-9A-Z]{5}$/.test(sqlState)
+          ? { sqlState }
+          : {}),
+      }),
     );
     return Response.json(
       {

@@ -10,10 +10,13 @@ import { configuredAutomations } from "../src/server/automations/configured";
 import { KnowledgeService } from "../src/server/knowledge/service";
 import { MarkdownFiles } from "../src/server/knowledge/files";
 import { configuredImprovements } from "../src/server/improvements/configured";
+import { runReconcilers } from "../src/server/reconcile";
 requireLiveMode(process.env);
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
 const db = openPostgres(process.env.DATABASE_URL);
-// Recovery never invokes the gateway. Avoid requiring a gateway key just to reconcile.
+// Orchestration recovery never invokes the gateway, so reconciling needs no
+// gateway key. Phase 5 discussion jobs are separate: configuredImprovements
+// builds its own planner and calls the model only for owner-requested steps.
 const gateway = {
   async complete() {
     throw new Error("Reconciliation cannot call a model.");
@@ -61,23 +64,27 @@ console.log(
 );
 try {
   while (!controller.signal.aborted) {
-    try {
-      await service.tick();
-      await automations.tick();
-      if (knowledge) await knowledge.tick();
-      await improvements.reconcileTick();
-      await db.query(
-        "INSERT INTO worker_heartbeat(singleton,completed_at,release) VALUES(true,now(),$1) ON CONFLICT(singleton) DO UPDATE SET completed_at=now(),release=EXCLUDED.release",
-        [process.env.RELEASE_COMMIT ?? "development"],
-      );
-    } catch {
-      console.error(
-        JSON.stringify({
-          event: "reconciliation_failed",
-          code: "storage_or_configuration",
-        }),
-      );
-    }
+    const failed = await runReconcilers([
+      { name: "orchestration", run: () => service.tick() },
+      { name: "automations", run: () => automations.tick() },
+      ...(knowledge
+        ? [{ name: "knowledge", run: () => knowledge.tick() }]
+        : []),
+      { name: "improvements", run: () => improvements.reconcileTick() },
+    ]);
+    // Fresh readiness means every reconciler completed. Still run all steps
+    // after a failure so recovery/cancellation is never withheld.
+    if (!failed.length)
+      await runReconcilers([
+        {
+          name: "heartbeat",
+          run: () =>
+            db.query(
+              "INSERT INTO worker_heartbeat(singleton,completed_at,release) VALUES(true,now(),$1) ON CONFLICT(singleton) DO UPDATE SET completed_at=now(),release=EXCLUDED.release",
+              [process.env.RELEASE_COMMIT ?? "development"],
+            ),
+        },
+      ]);
     try {
       await delay(interval, undefined, { signal: controller.signal });
     } catch {

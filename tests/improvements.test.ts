@@ -225,7 +225,9 @@ it("failed tests cannot become review-ready and narrative reports cannot approve
   r = await cmd(r, "sync");
   await s.tick();
   r = await s.get(owner, r.id);
-  expect(r.state).toBe("validating");
+  // A concluded failing check is a result, not validation still in progress.
+  expect(r.state).toBe("failed");
+  expect(r.error).toBe("validation_failed");
   await expect(
     cmd(r, "review", {
       review: {
@@ -241,6 +243,71 @@ it("failed tests cannot become review-ready and narrative reports cannot approve
       },
     }),
   ).rejects.toMatchObject({ code: "validation_failed" });
+});
+async function awaitingValidation(checks: { conclusion: string }[]) {
+  let r = await authorized();
+  await s.tick();
+  r = await s.get(owner, r.id);
+  f.state.external!.status = "done";
+  r = await cmd(r, "sync");
+  await s.tick();
+  r = await s.get(owner, r.id);
+  f.state.evidence = {
+    ...syntheticEvidence(r.id),
+    passed: false,
+    checks: checks.map(({ conclusion }) => ({
+      command: "npm test",
+      conclusion,
+      exitCode: conclusion === "success" ? 0 : null,
+      url: "https://github.com/example/test",
+    })),
+  };
+  let reads = 0;
+  const evidence = f.repo.evidence.bind(f.repo);
+  f.repo.evidence = async (...args) => {
+    reads++;
+    return evidence(...args);
+  };
+  const poll = async () => {
+    await db.query(
+      "UPDATE improvement_requests SET updated_at=now()-interval '1 minute' WHERE id=$1",
+      [r.id],
+    );
+    await s.reconcileTick();
+    return s.get(owner, r.id);
+  };
+  return { id: r.id, poll, reads: () => reads };
+}
+it("stops polling the repository once a check has concluded with a failure", async () => {
+  const v = await awaitingValidation([{ conclusion: "failure" }]);
+  let r = await v.poll();
+  expect(r.state).toBe("failed");
+  for (let i = 0; i < 4; i++) r = await v.poll();
+  expect(v.reads()).toBe(1);
+  expect(r.state).toBe("failed");
+  expect(f.state.creates).toBe(1);
+  // The owner may still deliberately re-read evidence, e.g. after a CI re-run.
+  f.state.evidence = null;
+  r = await cmd(r, "retry");
+  await s.tick();
+  expect((await s.get(owner, r.id)).state).toBe("ready_for_review");
+});
+it("keeps waiting for pending checks only for a bounded time", async () => {
+  const v = await awaitingValidation([{ conclusion: "pending" }]);
+  let r = await v.poll();
+  expect(r.state).toBe("validating");
+  r = await v.poll();
+  expect(v.reads()).toBe(2);
+  await db.query(
+    "UPDATE improvement_requests SET data=jsonb_set(data,'{syncedAt}',to_jsonb($1::text)) WHERE id=$2",
+    [new Date(Date.now() - 2 * 3600000).toISOString(), v.id],
+  );
+  r = await v.poll();
+  expect(r.state).toBe("blocked");
+  expect(r.error).toBe("validation_timeout");
+  for (let i = 0; i < 3; i++) r = await v.poll();
+  expect(v.reads()).toBe(2);
+  expect(f.state.creates).toBe(1);
 });
 it("bounds safe read retries and never turns a failing check into another coding run", async () => {
   let r = await authorized();

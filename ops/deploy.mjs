@@ -50,9 +50,16 @@ export function validateReview(
   );
   requireValue(
     Array.isArray(review.schema) &&
-      review.schema.length === 6 &&
+      review.schema.length > 0 &&
+      review.schema.length <= 999 &&
       review.schema.every(
-        (s) => /^\d{3}_[a-z_]+\.sql$/.test(s.name) && digest.test(s.checksum),
+        (s, i) =>
+          s !== null &&
+          typeof s === "object" &&
+          /^\d{3}_[a-z_]+\.sql$/.test(s.name) &&
+          digest.test(s.checksum) &&
+          (i === 0 ||
+            review.schema[i - 1].name.slice(0, 3) < s.name.slice(0, 3)),
       ),
     "invalid_schema_review",
   );
@@ -88,6 +95,14 @@ export function validateReview(
   requireValue(
     expiry > now && expiry <= now + 24 * 60 * 60 * 1000,
     "expired_approval",
+  );
+}
+
+export function verifyReviewedSchema(reviewed, packaged) {
+  // The exact immutable artifact, not a hard-coded phase count, is authoritative.
+  requireValue(
+    JSON.stringify(packaged) === JSON.stringify(reviewed),
+    "schema_review_changed",
   );
 }
 export async function verifyRelease(
@@ -291,10 +306,7 @@ async function main() {
       review.commit,
       review.manifestSha256,
     );
-    requireValue(
-      JSON.stringify(current.manifest.schema) === JSON.stringify(review.schema),
-      "schema_review_changed",
-    );
+    verifyReviewedSchema(review.schema, current.manifest.schema);
     requireValue(
       (await sha256(
         `/var/lib/control-center/incoming/${review.commit}.tar.gz`,

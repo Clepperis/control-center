@@ -1,4 +1,12 @@
-# Delivery status
+# Delivery roadmap
+
+Updated 2026-11-17: use [current status](CURRENT-STATUS.md) and the
+[workspace plan](WORKSPACE-PLAN.md) for current priorities. The candidate combines
+automatic routing, Paperclip proposals, Tool Hub, shared usage, lessons/feedback,
+UI refinements and deployment fixes. Next: combined review/CI, recovery proof and
+exact Oracle release preparation, then LJA and phone access.
+
+The checkpoints below are historical and do not override the newer evidence.
 
 ## Phase 1
 

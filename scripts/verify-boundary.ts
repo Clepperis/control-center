@@ -49,6 +49,7 @@ for (const { mode, nodeEnv } of [
         OIDC_AUDIENCE: "control-center",
         OIDC_JWKS_URL: "https://identity.example/jwks",
         OWNER_SUBJECT: "synthetic-owner",
+        TOOL_HUB_TOKEN: "",
       },
     },
   );
@@ -64,6 +65,15 @@ for (const { mode, nodeEnv } of [
       await delay(200);
     }
     assert(ready, "Production boundary server did not start");
+    const headers = (await fetch(base)).headers;
+    const csp = headers.get("content-security-policy") ?? "";
+    assert(csp.includes("default-src 'self'"), "Missing CSP");
+    assert(csp.includes("frame-ancestors 'none'"), "CSP allows framing");
+    assert(!csp.includes("unsafe-eval"), "Production CSP allows eval");
+    assert(
+      headers.get("strict-transport-security")?.startsWith("max-age="),
+      "Missing HSTS",
+    );
     for (const path of ["/", "/chat", "/projects", "/settings"]) {
       const html = await (await fetch(base + path)).text();
       assert(html.includes("Reikia sukonfigūruoti prieigą"));
@@ -72,6 +82,9 @@ for (const { mode, nodeEnv } of [
     for (const path of [
       "/api/workspace",
       "/api/agents",
+      "/api/usage",
+      "/api/models",
+      "/api/lessons",
       "/api/automations",
       "/api/knowledge",
       "/api/knowledge?op=projects",
@@ -92,6 +105,8 @@ for (const { mode, nodeEnv } of [
       "/api/automations",
       "/api/knowledge",
       "/api/improvements",
+      "/api/lessons",
+      "/api/feedback",
       "/api/automations/22222222-2222-4222-8222-222222222222",
     ]) {
       const response = await fetch(base + path, {
@@ -101,6 +116,12 @@ for (const { mode, nodeEnv } of [
       });
       assert.equal(response.status, mode === "development" ? 503 : 401);
     }
+    const mcp = await fetch(base + "/api/mcp", { method: "POST" });
+    assert.equal(
+      mcp.status,
+      503,
+      "Tool Hub must be disabled without its own token",
+    );
     console.log(
       `Production artifact verified for AUTH_MODE=${mode}, NODE_ENV=${nodeEnv}: pages expose setup only; API reads and mutations deny access.`,
     );

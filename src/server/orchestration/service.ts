@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import {
   assertTransition,
+  formatBudget,
   mapPaperclipStatus,
   replySchema,
   terminalStates,
@@ -13,6 +14,8 @@ import { Store, DomainError, digest, marker, toRun } from "./store";
 import type { AutomationService } from "../automations/service";
 import type { KnowledgeService } from "../knowledge/service";
 import type { Grounding, KnowledgeScope } from "@/domain/knowledge";
+import type { LessonService } from "../learning/service";
+import { logEvent } from "../observability/log";
 
 export class OrchestrationService {
   constructor(
@@ -22,7 +25,20 @@ export class OrchestrationService {
     private delegationEnabled: boolean,
     private automations?: AutomationService,
     private knowledge?: KnowledgeService,
+    private lessons?: LessonService,
   ) {}
+  /** Owner-approved lessons for the prompt; a lesson outage never blocks chat. */
+  private async approvedLessons(owner: string): Promise<string[]> {
+    try {
+      return this.lessons ? await this.lessons.approved(owner) : [];
+    } catch (error) {
+      // Visible in logs so a silent loss of lessons is noticed.
+      logEvent("lessons.unavailable", {
+        reason: error instanceof Error ? error.name : "unexpected",
+      });
+      return [];
+    }
+  }
   async agents(): Promise<Agent[]> {
     try {
       const agents = await this.paperclip.listAgents();
@@ -95,7 +111,7 @@ export class OrchestrationService {
         signal,
         offered,
         scope ? grounding : undefined,
-        selection,
+        { ...selection, lessons: await this.approvedLessons(owner) },
       );
       const reply = replySchema.parse(result.reply);
       if (scope && reply.kind !== "answer" && reply.kind !== "memory")
@@ -151,6 +167,7 @@ export class OrchestrationService {
                     tier: result.route.tier,
                     fallback: result.route.fallback,
                     override: result.route.override,
+                    routeReason: result.route.reason,
                   }),
                   replyKind: reply.kind,
                 })
@@ -174,10 +191,10 @@ export class OrchestrationService {
               randomUUID(),
               conversationId,
               turn.id,
-              plan.agentId ? "awaiting_confirmation" : "blocked",
+              "awaiting_confirmation",
               JSON.stringify(plan),
               digest(JSON.stringify(plan)),
-              plan.agentId ? null : "agent_unavailable",
+              null,
             ],
           );
         }
@@ -243,9 +260,12 @@ export class OrchestrationService {
     if (run.state !== "awaiting_confirmation")
       throw new DomainError(409, "invalid_state");
     if (!this.delegationEnabled) throw new IntegrationError("disabled");
-    const agents = await this.agents();
-    if (!agents.some((a) => a.id === run.plan.agentId && a.eligible))
-      throw new IntegrationError("agent_unavailable");
+    // A null target agent means Paperclip's own routing; a chosen one must be eligible.
+    if (run.plan.agentId) {
+      const agents = await this.agents();
+      if (!agents.some((a) => a.id === run.plan.agentId && a.eligible))
+        throw new IntegrationError("agent_unavailable");
+    }
     assertTransition(run.state, "delegating");
     const claimed = await this.store.db.query(
       "UPDATE orchestration_runs SET state='delegating',confirmed_at=now(),confirmed_by=$2,delegation_started_at=now(),updated_at=now() WHERE id=$1 AND state='awaiting_confirmation' AND confirmed_at IS NULL RETURNING id",
@@ -258,12 +278,19 @@ export class OrchestrationService {
       run.plan.boundedTask,
       "Priėmimo kriterijai:",
       ...run.plan.completionCriteria.map((s) => `- ${s}`),
+      ...(run.plan.budgetCeiling
+        ? [`Biudžeto riba: ${formatBudget(run.plan.budgetCeiling)}`]
+        : []),
       "Apribojimai:",
       ...run.plan.constraints.map((s) => `- ${s}`),
     ].join("\n\n");
     try {
       const task = await this.paperclip.createTask(
-        { title: run.plan.title, description, agentId: run.plan.agentId! },
+        {
+          title: run.plan.title,
+          description,
+          ...(run.plan.agentId && { agentId: run.plan.agentId }),
+        },
         signal,
       );
       await this.store.db.query(
@@ -325,7 +352,7 @@ export class OrchestrationService {
         const matches = (await this.paperclip.findByMarker(marker(id))).filter(
           (t) =>
             t.title === run.plan.title &&
-            t.assigneeAgentId === run.plan.agentId,
+            (!run.plan.agentId || t.assigneeAgentId === run.plan.agentId),
         );
         if (matches.length !== 1) {
           await this.store.db.query(
@@ -356,6 +383,7 @@ export class OrchestrationService {
             title: task.title,
             description: task.description,
             comments: task.comments,
+            approvals: task.approvals ?? null,
           }),
           state === "blocked"
             ? task.status === "blocked"

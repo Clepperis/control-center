@@ -7,6 +7,7 @@ import type { AutomationAdapter, AutomationExecution } from "./contracts";
 import type { AutomationContract, CatalogWorkflow } from "@/domain/automations";
 import type { N8nConfig } from "@/server/config";
 import { IntegrationError, type Fetcher } from "./errors";
+import { canonicalJson } from "@/server/canonical-json";
 
 const id = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/);
 const date = z.string().datetime({ offset: true }).nullable();
@@ -183,15 +184,6 @@ export const safeTransformParameters = {
   },
   options: {},
 };
-function canonical(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
-  if (value && typeof value === "object")
-    return `{${Object.entries(value)
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-      .map(([k, v]) => `${JSON.stringify(k)}:${canonical(v)}`)
-      .join(",")}}`;
-  return JSON.stringify(value);
-}
 const graph = {
   "Synthetic input": {
     main: [[{ node: "Transform text", type: "main", index: 0 }]],
@@ -227,7 +219,7 @@ export function verifySafeDefinition(
     w.active ||
     w.activeVersionId ||
     w.settings.errorWorkflow ||
-    canonical(w.connections) !== canonical(graph)
+    canonicalJson(w.connections) !== canonicalJson(graph)
   )
     throw new IntegrationError("malformed");
   const expected = [
@@ -256,7 +248,7 @@ export function verifySafeDefinition(
       n.continueOnFail ||
       n.onError ||
       (n.credentials && Object.keys(n.credentials as object).length) ||
-      canonical(n.parameters) !== canonical(e.parameters)
+      canonicalJson(n.parameters) !== canonicalJson(e.parameters)
     )
       throw new IntegrationError("malformed");
   }

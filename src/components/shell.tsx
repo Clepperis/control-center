@@ -15,6 +15,7 @@ import {
   X,
   Wrench,
   ChartBar,
+  Lightbulb,
   CaretDown,
   Info,
 } from "@phosphor-icons/react";
@@ -33,6 +34,7 @@ export const navigation = [
   { href: "/knowledge", label: "Žinios", icon: BookOpen },
   { href: "/improve", label: "Tobulinti sistemą", icon: Wrench },
   { href: "/statistics", label: "Statistika", icon: ChartBar },
+  { href: "/lessons", label: "Pamokos", icon: Lightbulb },
   { href: "/settings", label: "Nustatymai ir ryšiai", icon: SlidersHorizontal },
 ];
 function Navigation({ onNavigate }: { onNavigate?: () => void }) {

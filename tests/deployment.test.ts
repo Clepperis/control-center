@@ -2,9 +2,14 @@ import { it, expect } from "vitest";
 import { mkdtemp, mkdir, writeFile, symlink } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { tmpdir } from "node:os";
-import { validateReview, transition, verifyRelease } from "../ops/deploy.mjs";
+import {
+  validateReview,
+  transition,
+  verifyRelease,
+  verifyReviewedSchema,
+} from "../ops/deploy.mjs";
 import { managed, inventory, verifyInventory, sha256 } from "../ops/lib.mjs";
-import { checkSchema } from "../src/server/db/schema";
+import { checkSchema, schemaManifest } from "../src/server/db/schema";
 import { migrate } from "../src/server/db/migrate";
 import { openTestDatabase } from "./pglite";
 const schema = Array.from({ length: 6 }, (_, i) => ({
@@ -65,6 +70,78 @@ it("binds owner procedure to exact release/artifact/target/config/schema and exp
     [review, { ...approval, expiresAt: "2000-01-01" }, hash, machine],
   ] as const)
     expect(() => validateReview(r, a, h, m)).toThrow();
+});
+it("accepts the current and later reviewed migration manifests without a fixed migration count", async () => {
+  const current = await schemaManifest(resolve("db/migrations"));
+  const future = [1, 2].map((offset) => ({
+    name: `${String(Number(current.at(-1)!.name.slice(0, 3)) + offset).padStart(3, "0")}_example.sql`,
+    checksum: String(offset).repeat(64),
+  }));
+  const hash = "2".repeat(64);
+  const approval = {
+    approvedBy: "owner",
+    action: "activate",
+    packageSha256: hash,
+    expiresAt: new Date(Date.now() + 60000).toISOString(),
+  };
+  for (const migrations of [
+    current,
+    [...current, future[0]],
+    [...current, ...future],
+  ])
+    expect(() =>
+      validateReview(
+        { ...review, schema: migrations },
+        approval,
+        hash,
+        review.targetMachineSha256,
+      ),
+    ).not.toThrow();
+});
+it("rejects empty, malformed, duplicated and reordered migration reviews", () => {
+  const hash = "2".repeat(64);
+  const approval = {
+    approvedBy: "owner",
+    action: "activate",
+    packageSha256: hash,
+    expiresAt: new Date(Date.now() + 60000).toISOString(),
+  };
+  for (const migrations of [
+    undefined,
+    null,
+    [],
+    [null],
+    ["001_example.sql"],
+    [{ name: "../001_example.sql", checksum: "a".repeat(64) }],
+    [{ name: "001_example.sql", checksum: "invalid" }],
+    [...schema, schema.at(-1)],
+    [...schema, { name: "006_other.sql", checksum: "a".repeat(64) }],
+    [...schema].reverse(),
+  ])
+    expect(() =>
+      validateReview(
+        { ...review, schema: migrations },
+        approval,
+        hash,
+        review.targetMachineSha256,
+      ),
+    ).toThrow("invalid_schema_review");
+});
+it("still binds the reviewed migrations to every packaged name, checksum and position", async () => {
+  const packaged = await schemaManifest(resolve("db/migrations"));
+  expect(() =>
+    verifyReviewedSchema(structuredClone(packaged), packaged),
+  ).not.toThrow();
+  for (const changed of [
+    packaged.slice(0, -1),
+    [...packaged, { name: "008_example.sql", checksum: "8".repeat(64) }],
+    packaged.map((m, i) => (i === 0 ? { ...m, checksum: "0".repeat(64) } : m)),
+    packaged.map((m, i) => (i === 0 ? { ...m, name: "001_changed.sql" } : m)),
+    [...packaged].reverse(),
+  ])
+    expect(() => verifyReviewedSchema(changed, packaged)).toThrow(
+      "schema_review_changed",
+    );
 });
 it("rolls both processes back on health failure and stops on uncertain/failed rollback", async () => {
   const calls: string[] = [];
@@ -154,7 +231,9 @@ it("checks exact schema and refuses old/new/modified histories without auto-migr
     );
     expect(address.rows[0].address).toBe("127.0.0.1");
     await migrate(db, dir);
-    await expect(checkSchema(db, dir)).resolves.toHaveLength(7);
+    await expect(checkSchema(db, dir)).resolves.toEqual(
+      await schemaManifest(dir),
+    );
     await db.query("UPDATE schema_migrations SET checksum=$1 WHERE name=$2", [
       "0".repeat(64),
       "006_owner_auth.sql",
