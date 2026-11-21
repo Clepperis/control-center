@@ -7,6 +7,7 @@ import {
   transition,
   verifyRelease,
   verifyReviewedSchema,
+  checkExecutionFlags,
 } from "../ops/deploy.mjs";
 import { managed, inventory, verifyInventory, sha256 } from "../ops/lib.mjs";
 import { checkSchema, schemaManifest } from "../src/server/db/schema";
@@ -26,6 +27,7 @@ const review = {
   port: 3210,
   dataRoot: "/var/lib/control-center",
   executionEnabled: false,
+  liveModelEnabled: false,
   migrationsAppliedSeparately: true,
   schema,
   configSha256: { web: "e".repeat(64), worker: "f".repeat(64) },
@@ -67,9 +69,54 @@ it("binds owner procedure to exact release/artifact/target/config/schema and exp
     [review, approval, hash, "4".repeat(64)],
     [{ ...review, port: 3000 }, approval, hash, machine],
     [{ ...review, executionEnabled: true }, approval, hash, machine],
+    [{ ...review, liveModelEnabled: undefined }, approval, hash, machine],
+    [{ ...review, liveModelEnabled: "true" }, approval, hash, machine],
     [review, { ...approval, expiresAt: "2000-01-01" }, hash, machine],
   ] as const)
     expect(() => validateReview(r, a, h, m)).toThrow();
+  expect(() =>
+    validateReview(
+      { ...review, liveModelEnabled: true },
+      approval,
+      hash,
+      machine,
+    ),
+  ).not.toThrow();
+});
+it("lets only an explicitly reviewed live chat switch on; other execution stays off", () => {
+  const off = {
+    LIVE_MODEL_ENABLED: "false",
+    LIVE_DELEGATION_ENABLED: "false",
+    N8N_EXECUTION_ENABLED: "false",
+    IMPROVEMENT_EXECUTOR_ENABLED: "false",
+  };
+  const chat = { ...off, LIVE_MODEL_ENABLED: "true" };
+  expect(() => checkExecutionFlags(off, false)).not.toThrow();
+  expect(() => checkExecutionFlags(chat, true)).not.toThrow();
+  // Config must match the reviewed decision exactly, in both directions.
+  expect(() => checkExecutionFlags(chat, false)).toThrow(
+    "execution_must_remain_disabled",
+  );
+  expect(() => checkExecutionFlags(off, true)).toThrow(
+    "live_model_not_as_reviewed",
+  );
+  const without = (env: Record<string, string>, flag: string) =>
+    Object.fromEntries(Object.entries(env).filter(([k]) => k !== flag));
+  expect(() =>
+    checkExecutionFlags(without(chat, "LIVE_MODEL_ENABLED"), true),
+  ).toThrow("live_model_not_as_reviewed");
+  for (const flag of [
+    "LIVE_DELEGATION_ENABLED",
+    "N8N_EXECUTION_ENABLED",
+    "IMPROVEMENT_EXECUTOR_ENABLED",
+  ] as const) {
+    expect(() =>
+      checkExecutionFlags({ ...chat, [flag]: "true" }, true),
+    ).toThrow("execution_must_remain_disabled");
+    expect(() => checkExecutionFlags(without(off, flag), false)).toThrow(
+      "execution_must_remain_disabled",
+    );
+  }
 });
 it("accepts the current and later reviewed migration manifests without a fixed migration count", async () => {
   const current = await schemaManifest(resolve("db/migrations"));
