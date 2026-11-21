@@ -1,386 +1,502 @@
-# Phase 6 release-candidate review package
+# Phase 6 release candidate
 
-Prepared 2026-11-18, local work only. **Review package, not deployment approval.**
-Activation is blocked by the live-model policy mismatch and unestablished
-compatible rollback described below. No target, secrets, accounts or external
-services were accessed. Git fetch/push and the requested draft PR are repository
-delivery operations, separate from runtime verification.
+Updated 2026-11-21 for draft PR #20 into `codex/phase-6-owner-auth-deployment`.
+The owner approvals below are prepared for review. Fill deployment-specific values
+in protected operator storage. Use placeholders in GitHub and enter credentials
+only in the owner's terminal or secret store.
 
-## Exact revision and artifact
+## Exact release and CI evidence
 
-| Item                             | Exact identity                                                                      |
-| -------------------------------- | ----------------------------------------------------------------------------------- |
-| Validated payload source branch  | `codex/integration-readiness`                                                       |
-| Starting and artifact source SHA | `6818cefc63d167687a0227fa592d4879033b38d7`                                          |
-| Review documentation branch      | `codex/release-candidate-package`, created from that exact origin commit            |
-| PR target                        | `codex/phase-6-owner-auth-deployment` at `11b147506d0675b30eef2476a28ec96a35e3f34b` |
-| Cached artifact                  | `control-center-6818cefc63d167687a0227fa592d4879033b38d7-linux-arm64.tar.gz`        |
-| Size                             | 176,859,930 bytes                                                                   |
-| Tar SHA-256                      | `7714ddbedd7c226b46f14bb9c4c0d17303ae8f941f8be97f581c58e0ef4a3a24`                  |
-| Release-manifest SHA-256         | `d5940c620d3251e29dfe6d3961f664d166c941bf6ec315a7eb9ad2b20e1c4262`                  |
-| Manifest platform/architecture   | Linux / ARM64                                                                       |
+| Item                            | Value                                                                        |
+| ------------------------------- | ---------------------------------------------------------------------------- |
+| Source branch                   | `codex/phase-6-owner-auth-deployment`                                        |
+| Source commit                   | `29eaa9e7ac5614f4555f740f6a946772549fcdc4`                                   |
+| Target platform                 | Linux ARM64, Node 24.22.2                                                    |
+| Tar filename                    | `control-center-29eaa9e7ac5614f4555f740f6a946772549fcdc4-linux-arm64.tar.gz` |
+| Tar size                        | 176,857,799 bytes                                                            |
+| Tar SHA-256                     | `940f4354e52f105ffec65ab02ca07b379175c5e61d3d2cc573923e64906e6774`           |
+| Embedded `release.json` SHA-256 | `98a1ebe77e9c0df73f694677d67dfcda4786c51e18923b4eaf22408f8027891b`           |
 
-The documentation commit is **not** the artifact's embedded source commit.
-Approval must bind the payload SHA and hashes above, never a moving branch or
-the later documentation-only PR head. Any application, SQL, ops or configuration
-change requires a new review and, where applicable, a new native artifact.
+The exact target-branch commit includes [PR #21](https://github.com/Clepperis/control-center/pull/21).
+GitHub Actions built and ran that payload on native Linux ARM64. The checks covered
+password login, persistence, worker restart, PostgreSQL runtime-role boundaries,
+and real PostgreSQL dump and isolated restore with local rclone encryption.
+The downloaded tar and embedded manifest hashes matched the CI receipt. All nine
+SQL files and the shipped deploy, backup and roles files matched the manifest
+and source bytes. The artifact binds the source commit above. Re-review any new
+payload, SQL or ops changes. The Actions download expires on 2026-11-28 at
+12:08 UTC. Keep a verified private copy before then, or review and record the
+hashes of a fresh CI build before approving it.
+[CI run](https://github.com/Clepperis/control-center/actions/runs/44902204714) ·
+[ARM64 job](https://github.com/Clepperis/control-center/actions/runs/44902204714/job/136840256420) ·
+[Artifact download](https://github.com/Clepperis/control-center/actions/runs/44902204714/artifacts/14706646361)
 
-No ARM64 artifact was built or executed in this run. On Windows x64,
-`npm run build:release` exited 1 with `native_linux_arm64_required`, and
-`node scripts/verify-native-artifact.mjs` exited 1 with the native-platform
-assertion. These guards were retained. The already-cached artifact's tar hash,
-manifest hash, embedded source/platform/architecture and nine migration hashes
-were checked locally without extracting or executing it. Historical
-[source CI](https://github.com/Clepperis/control-center/actions/runs/44184302090)
-is dated 2026-11-17; it is not fresh ARM64 verification for this local run or proof
-of execution on the target. No CI job was dispatched for this task.
+PR #21 requires a boolean `review.liveModelEnabled`. With `true`, the validator
+requires `LIVE_MODEL_ENABLED=true` in both reviewed env files, including both
+files for any previous release named in the review. The same exact-match rule
+requires `false` if the reviewed decision is false. Delegation, n8n execution
+and the coding executor still require the literal string `false`. Preserve the
+existing Nexos key, model, token and timeout bounds in the web configuration.
+Leave `TOOL_HUB_TOKEN` unset and keep auth credentials out of the worker.
+[Activation fix](https://github.com/Clepperis/control-center/pull/21)
 
-## Target and process layout
+## Ordered migration manifest
 
-All target-specific fields remain placeholders: `<ORACLE_HOST>`,
-`<ORACLE_MACHINE_FINGERPRINT>`, `<APP_ORIGIN>`, `<EXISTING_NETWORK_PLAN_HASH>`,
-`<PREVIOUS_RELEASE_SHA>`, `<PROTECTED_CONFIG_HASHES>` and `<BACKUP_RECEIPT_HASH>`.
-They must be completed privately during a separately authorized host review.
-This public package is not an executable `review.json` or acknowledgement.
+The last documented deployed baseline, `d69a8c1345c1ef3cccd21341ea964a5bf2a1ce8c`,
+contains 001–006. If the owner's ledger matches that baseline, 007–009 are pending.
+The actual pending set is approved only after the owner captures the private
+ledger and compares every name and checksum to this manifest.
 
-- Native, immutable release directory `/opt/control-center/releases/<RELEASE_SHA>`;
-  dedicated runtime identity, separately bounded web and worker systemd units.
-- Web binds only the existing private listener; worker has no public listener.
-  Reuse the existing HTTPS proxy, hostname and certificate arrangement unchanged.
-- Separate protected web/worker configuration under
-  `/etc/control-center/releases/<RELEASE_SHA>/`; operator/migration access stays
-  outside runtime processes. Preserve the existing release and its configuration.
-- Dedicated application PostgreSQL and authoritative private Markdown/history
-  remain in their existing locations. No container, second application database
-  on a production service, new schedule or infrastructure reprovisioning.
+| Filename                  | SHA-256                                                            |
+| ------------------------- | ------------------------------------------------------------------ |
+| `001_foundation.sql`      | `c00b67edfdb0a70e8c79f190b5d6f455906e433c5f4ae3126b25825f3e351ba0` |
+| `002_orchestration.sql`   | `0a830ffef3ef34b7738d747c8d944da1284ce04e817bcfe3e10de82cf58af7cb` |
+| `003_automations.sql`     | `963ed73006f741998e12e81481d9c087ba132ae2a4d90024de56c37d38d479dc` |
+| `004_knowledge.sql`       | `77304113926cd0269a366eee7925edd2be34057d7eeb791d741a0e472a37085d` |
+| `005_improvements.sql`    | `11a1ec1e7e8d78ad49b2feebd42814b7fc03dfd59f17de8752aa708c90baf78f` |
+| `006_owner_auth.sql`      | `a25b5526e24cedf857f43f5becb91e3149eb442f60768b8989c6e5d5513b29b2` |
+| **`007_model_usage.sql`** | `d530823bd784894d06f2fe0041231f04f1e44aa0bf438213d1608a43aa8aef42` |
+| **`008_tool_calls.sql`**  | `3bd5a426733f47677bdc3fce76b0e7a70cbcd26555947e5ad48b6adf0eac0b02` |
+| **`009_lessons.sql`**     | `b3d86693ebec7248e58650186e41e59db9e25ff59d56a382fc32dfde57c0d879` |
 
-## Configuration review: names only
-
-Comparison uses the public source of the last documented deployed baseline
-`d69a8c1345c1ef3cccd21341ea964a5bf2a1ce8c`. Actual server configuration and current
-deployment were **not** inspected; the operator must confirm drift privately.
-
-| Group                     | Environment variable names                                                                                                                               | Change/preservation rule                                                                                                                    |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web identity and sessions | `AUTH_MODE`, `APP_ORIGIN`, `OWNER_SUBJECT`, `AUTH_SECRET`                                                                                                | Existing; preserve exact subject, origin and secret. No bootstrap, account transfer or reset.                                               |
-| Storage and release       | `DATA_MODE`, `DATABASE_URL`, `KNOWLEDGE_ROOT`, `RELEASE_COMMIT`, `HOSTNAME`, `PORT`                                                                      | Existing; preserve storage and role separation. Release identity changes only to the exact approved payload.                                |
-| Worker                    | `DATABASE_URL`, `KNOWLEDGE_ROOT`, `RECONCILE_INTERVAL_MS`, `RELEASE_COMMIT`                                                                              | Existing; separate worker DB role; no auth, deployment or backup secrets.                                                                   |
-| Nexos                     | `NEXOS_API_KEY`, `NEXOS_MODEL`, `NEXOS_MAX_COMPLETION_TOKENS`, `NEXOS_TIMEOUT_MS`, `LIVE_MODEL_ENABLED`                                                  | Existing; preserve the owner's approved key, selected model, bounds and enabled chat setting.                                               |
-| Tier routing              | `NEXOS_MODEL_FAST`, `NEXOS_MODEL_STANDARD`, `NEXOS_MODEL_STRONG`                                                                                         | New since the documented baseline; optional. Omission retains the existing default model; assigning tiers needs explicit model/cost review. |
-| Tool Hub                  | `TOOL_HUB_TOKEN`                                                                                                                                         | New, optional. Leave unconfigured unless separately approved; no token generation/distribution here.                                        |
-| Shared-usage reader       | `USAGE_SNAPSHOT_FILE`                                                                                                                                    | New, optional private aggregate path. Missing input is unavailable, never fabricated usage.                                                 |
-| Separate collector        | `USAGE_WINDOW_DAYS`, `USAGE_SYNC_INTERVAL_MS`, `USAGE_PAPERCLIP_AGENT_IDS`, `USAGE_CODEX_ROOTS`, `USAGE_CLAUDE_ROOTS`, `USAGE_CLAUDE_QUOTA_FILE`         | New, optional collector settings. No collector schedule, local-log copying to Oracle or instruction publishing is included.                 |
-| Delegation                | `LIVE_DELEGATION_ENABLED`, `PAPERCLIP_CONTRACT_VERIFIED`, `PAPERCLIP_BASE_URL`, `PAPERCLIP_BOARD_API_KEY`, `PAPERCLIP_COMPANY_ID`, `PAPERCLIP_AGENT_IDS` | Existing; delegation remains disabled. Do not create credentials, resume agents or change budgets.                                          |
-| Automation                | `N8N_EXECUTION_ENABLED`, `N8N_ORIGIN`, `N8N_MCP_TOKEN`, `N8N_TIMEOUT_MS`, `N8N_TEXT_WORKFLOW_ID`, `N8N_TEXT_WORKFLOW_VERSION`                            | Existing; execution remains disabled. No workflow creation, publication or execution.                                                       |
-| Coding                    | `IMPROVEMENT_EXECUTOR_ENABLED`, `IMPROVEMENT_REPOSITORY`, `IMPROVEMENT_TARGET_BRANCH`, `IMPROVEMENT_GITHUB_READ_TOKEN`, `IMPROVEMENT_POLICY_FILE`        | Existing; executor remains disabled. Do not silently retarget to the initial-only `main` branch.                                            |
-| Operator only             | `OPERATOR_DATABASE_URL`, `MIGRATION_DATABASE_URL`                                                                                                        | Existing; explicit operator operations only. Never pass to web, worker or executor.                                                         |
-| Backup operator           | `PGSERVICEFILE`, `PGPASSFILE`, `RESTORE_DATABASE_URL`, `RCLONE_CONFIG_PASS`                                                                              | Existing tooling inputs, not application settings. Retain protected configuration; do not copy into runtime env files.                      |
-
-### Activation policy mismatch: unresolved blocker
-
-The requested effects preserve Nexos chat enabled. However, `verifyConfig` in
-`ops/deploy.mjs` requires **all four** execution switches, including
-`LIVE_MODEL_ENABLED`, to be disabled. The existing activator therefore rejects
-the requested live-model configuration. `review.executionEnabled` does not
-provide an exception for chat.
-
-Do not disable existing chat just to satisfy the guard, forge an acknowledgement,
-edit the protected configuration, or bypass activation checks. This package
-records the conflict; a separate reviewed implementation/policy change with
-tests and a refreshed artifact is required before this activator can deliver the
-requested effects. No activation-readiness claim is made.
-
-## Schema and migration review
-
-The public source of the last documented deployed baseline contains 001–006.
-Therefore **007, 008 and 009 are new relative to that baseline**. Server drift
-is unknown until an authorized private ledger read. Never infer the production
-schema from the development checkout.
-
-| Order / filename        | SHA-256                                                            |
-| ----------------------- | ------------------------------------------------------------------ |
-| `001_foundation.sql`    | `c00b67edfdb0a70e8c79f190b5d6f455906e433c5f4ae3126b25825f3e351ba0` |
-| `002_orchestration.sql` | `0a830ffef3ef34b7738d747c8d944da1284ce04e817bcfe3e10de82cf58af7cb` |
-| `003_automations.sql`   | `963ed73006f741998e12e81481d9c087ba132ae2a4d90024de56c37d38d479dc` |
-| `004_knowledge.sql`     | `77304113926cd0269a366eee7925edd2be34057d7eeb791d741a0e472a37085d` |
-| `005_improvements.sql`  | `11a1ec1e7e8d78ad49b2feebd42814b7fc03dfd59f17de8752aa708c90baf78f` |
-| `006_owner_auth.sql`    | `a25b5526e24cedf857f43f5becb91e3149eb442f60768b8989c6e5d5513b29b2` |
-| `007_model_usage.sql`   | `d530823bd784894d06f2fe0041231f04f1e44aa0bf438213d1608a43aa8aef42` |
-| `008_tool_calls.sql`    | `3bd5a426733f47677bdc3fce76b0e7a70cbcd26555947e5ad48b6adf0eac0b02` |
-| `009_lessons.sql`       | `b3d86693ebec7248e58650186e41e59db9e25ff59d56a382fc32dfde57c0d879` |
-
-### Executed local database checks
-
-Used a newly initialized PostgreSQL **18.6 server on Windows x64**, bound to a
-fresh loopback listener, with synthetic data and dedicated synthetic roles.
-This migration/restore rehearsal used real PostgreSQL, not PGlite. The ordinary
-unit suite separately uses PGlite and provider substitutes.
-
-1. Confirmed the scratch public schema had zero tables. Applied all nine SQL
-   files through the application's transactional, checksum-checked migrator.
-2. Re-ran the migrator. All nine ledger entries, checksums and timestamps were
-   unchanged; `checkSchema` matched the manifest exactly.
-3. In another scratch DB, applied 001–006, created a synthetic owner, conversation,
-   answer, Markdown document and revision history, then took a custom-format
-   `pg_dump` plus Markdown copy **before** 007–009.
-4. Applied through 009 and confirmed the existing row counts were preserved.
-   Verified the old six-migration schema check rejects the upgraded database.
-5. Applied the shipped grants with synthetic role substitutions; new-table reads
-   worked after grants while worker auth reads and web credential/schema writes
-   remained denied. No production grant statement was executed.
-
-Production sequence remains: stop owner/external writes and both app processes,
-capture the coordinated pre-change database + Markdown/history/conflicts backup,
-verify isolated recovery, then explicitly apply SQL and reapply grants. The
-whole migration batch uses one transaction and advisory migration lock. Operator
-lock/statement timeouts and actual schema drift must be reviewed before SQL.
-Application startup and activation **never** apply migrations.
-
-### 008: additive Tool Hub audit trail
-
-New table `tool_calls`: `id uuid` PK; `created_at timestamptz`; `tool text`;
-`outcome text`; nullable `error_code text`; `duration_ms integer`; nullable
-`approval_ref text`. SQL bounds tool/error/reference lengths, outcome and
-nonnegative duration. It stores no tool arguments or results.
-
-Indexes: PK index `tool_calls_pkey`; B-tree `tool_calls_created(created_at)`.
-This creates an empty table and indexes; it alters/re-writes no existing table.
-Normal DDL/catalog locks still apply. It adds no existing-data backfill.
-
-### 009: additive learning and feedback
-
-New `lessons` columns: `id uuid` PK, `owner_subject text`, `scope text`,
-`text text`, `text_key text`, `source text`, `state text`, `occurrences integer`,
-nullable `evidence text`, `created_at timestamptz`, nullable `decided_at timestamptz`.
-Defaults: global scope, proposed state, one occurrence and current creation time.
-SQL constrains lengths, source/state enums and positive occurrences.
-
-Indexes: `lessons_pkey`, unique `lessons_owner_subject_scope_text_key_key`
-on `(owner_subject,scope,text_key)`, and `lessons_owner_state` on
-`(owner_subject,state,created_at DESC)`.
-
-New `message_feedback` columns: `message_id uuid` PK **and FK to existing
-`messages(id)`**, `owner_subject text`, `rating smallint`, nullable `note text`,
-`created_at timestamptz`. Rating and note length are constrained. Index:
-`message_feedback_pkey`. There is no extra owner index and no added column on
-`messages`.
-
-No existing table is rewritten or backfilled, and the new tables start empty.
-However, the FK is not lock-free: a local `pg_locks` probe during 009 observed
-`ShareRowExclusiveLock` on existing `messages`, plus locks on the new relations.
-That lock conflicts with ordinary writes and is held until transaction end.
-Quiesce writers, bound lock waits and roll back the SQL transaction on failure;
-do not treat “additive” as a zero-downtime guarantee.
-
-### Runtime grants after SQL
-
-Run the shipped `ops/postgres/roles.sql` against the approved application DB with
-private operator authentication and placeholder roles replaced locally:
-
-```sql
-REVOKE CREATE ON SCHEMA public FROM PUBLIC;
-GRANT USAGE ON SCHEMA public TO "<WEB_RUNTIME_ROLE>", "<WORKER_RUNTIME_ROLE>";
-GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public
-  TO "<WEB_RUNTIME_ROLE>", "<WORKER_RUNTIME_ROLE>";
-REVOKE ALL ON schema_migrations FROM "<WEB_RUNTIME_ROLE>", "<WORKER_RUNTIME_ROLE>";
-GRANT SELECT ON schema_migrations TO "<WEB_RUNTIME_ROLE>", "<WORKER_RUNTIME_ROLE>";
-REVOKE ALL ON auth_user,auth_account,auth_session,auth_verification,auth_login_budget
-  FROM "<WEB_RUNTIME_ROLE>", "<WORKER_RUNTIME_ROLE>";
-GRANT SELECT ON auth_user,auth_account TO "<WEB_RUNTIME_ROLE>";
-GRANT SELECT,INSERT,UPDATE,DELETE ON auth_session,auth_login_budget TO "<WEB_RUNTIME_ROLE>";
-```
-
-In particular, the shipped all-table grant includes the following new-table
-privileges. Their explicit equivalent is:
-
-```sql
-GRANT SELECT,INSERT,UPDATE,DELETE
-  ON public.model_usage,public.tool_calls,public.lessons,public.message_feedback
-  TO "<WEB_RUNTIME_ROLE>", "<WORKER_RUNTIME_ROLE>";
-```
-
-These are the existing broad application CRUD grants, not a claim of complete
-per-operation least privilege. No sequences are introduced by 007–009. Do not
-grant owner credentials, schema ownership or migration rights to runtime roles.
-
-## Intended external effects after an approved activation
-
-- Preserve enabled Nexos chat and its existing model/token/timeout bounds. Chat,
-  scoped knowledge answers and explicit planning requests can spend through the
-  gateway; activation itself must not perform a paid test or background completion.
-- Delegation, n8n execution and the coding executor stay disabled. No agents,
-  budgets, workflows, messages or branch protections change.
-- New Tool Hub access stays unconfigured unless separately approved. Agent
-  proposals still require owner review; lessons never self-approve.
-- No Drive authorization/upload, backup scheduler, collector publisher, DNS or
-  certificate operation is part of activation.
-
-The present activator cannot yet realize the first bullet; see the blocker above.
-
-## Validation plan after activation — not executed here
-
-Using the exact approved target and retained release/configuration evidence:
-
-1. Inspect actual web/worker unit PIDs, source release and bounded resource use.
-   Public HTTPS health must return success with valid existing TLS.
-2. Owner login succeeds with a Secure/HttpOnly/SameSite session cookie. A separate
-   client without cookies gets workspace 401; identity headers grant no access.
-3. Run private readiness as the application identity: exact nine-migration
-   checksums, storage/history/conflicts access, disk reserve and a recent worker
-   heartbeat bearing the **same** release commit. Public readiness stays hidden.
-4. Logout revokes that session; reuse fails. Test global reset revocation only
-   with a separate account-recovery approval, because it invalidates all sessions.
-5. In the approved observation window, restart web and worker, confirm stored
-   owner/data/session persistence and resumed heartbeat/reconciliation. Do not
-   resubmit an uncertain external task.
-6. Observe for at least five minutes after recovery. Health, access or heartbeat
-   failures trigger stop-and-reconcile, retaining the deployment lock and evidence.
-   A paid Nexos answer test needs its own bounded approval and is not implied.
-
-## Backup and rollback rehearsal/procedure
-
-### Executed locally
-
-Real PostgreSQL custom-format dump and Markdown/history copy were made with no
-active local application writers. The systemd quiescence observer was a
-deterministic no-writer substitute; no service manager was contacted.
-
-Real rclone 1.76.0 `crypt` encrypted the snapshot. Ciphertext was copied to a
-**local directory standing in for off-host storage**, copied back to the
-retrieval directory, checked against the receipt and decrypted. No Drive remote
-was configured or contacted. `pg_restore --exit-on-error --no-owner
---no-privileges` restored into a new scratch DB. The actual
-`node --import tsx scripts/restore-check.ts` returned `restore_verified` for
-one owner, one document and two historical revisions, after exact schema and
-Markdown hash checks. The combined tiny-fixture rehearsal took about 6.4 seconds;
-this is not a production recovery-time objective.
-
-The separate `npm run test:backup` also passed wrong-key, tamper, duplicate and
-unapproved-upload checks; its default mode does **not** restore a DB. The real
-PostgreSQL restoration above is separate evidence. Scratch databases/files were
-retained privately; the dedicated local cluster was stopped after the rehearsal.
-
-### Future host procedure and estimates
-
-1. **Pre-change snapshot:** privately verify schema/config/release identities;
-   quiesce web, worker and other writers; take coordinated DB + Markdown/history
-   backup and record its last retained write time. Estimate 5–15 minutes for a
-   small installation, subject to actual volume and locks.
-2. **Encrypted off-host copy:** encrypt locally, check ciphertext/receipt, then
-   obtain approval for one exact backup UUID, ciphertext bytes/hash and Drive
-   destination using approved `drive.file` authorization. Copy/check only that
-   ciphertext; no sync/deletion/schedule. Estimate 5–30+ minutes, bandwidth bound.
-3. **Retrieval/decryption:** retrieve into a new private directory, verify the
-   receipt and decrypt with an independently retained recovery secret/config.
-   Estimate 5–20+ minutes. Oracle/Drive and the independent recovery copy remain
-   unverified by this local exercise.
-4. **Isolated restore:** restore to a new loopback scratch DB/directory and run
-   the exact artifact's `restore-check`, schema, owner and Markdown checks.
-   Estimate 5–20+ minutes; never restore over production as a rehearsal.
-5. **Compatible process/config rollback:** retain the previous immutable artifact
-   and protected configuration; verify its exact schema/password boundary before
-   stopping/starting the web/worker pair. Estimate 5–10 minutes after compatibility
-   is established, followed by at least five minutes of observation.
-
-**Rollback blocker:** the locally tested six-migration baseline refuses the
-nine-migration schema even though 007–009 are additive. Do not assert
-`supportsCurrentSchema` or automatically start that old release against it.
-No compatible previous nine-migration release has been established here.
-Either establish and test one, or separately approve a coordinated data + Markdown
-restore to a known recovery point, with explicit downtime and loss of all later
-writes. Estimated data restore is 10–40+ minutes, volume dependent. A deterministic
-deployment transition test is not an actual systemd/Oracle rollback drill.
-
-## Local command record
-
-Fresh checks ran in an isolated detached copy of the exact payload SHA, with
-no `.env.local`, cleared inherited application/PG credentials, telemetry disabled,
-and external execution disabled. Full commands, timestamps, exits and detailed
-private logs are retained locally. `<SCRATCH_...>` below replaces local paths;
-no production values were used. No failing test was removed or weakened.
-
-| Command                                                                                         | Exit | Short result                                                                                     |
-| ----------------------------------------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------ |
-| `npm ci`                                                                                        | 0    | Clean locked install; audit warning retained, no version changes                                 |
-| `npm run lint`                                                                                  | 0    | Passed                                                                                           |
-| `npm run typecheck`                                                                             | 0    | Passed                                                                                           |
-| `npm test`                                                                                      | 0    | 267 tests, 27 files passed                                                                       |
-| `npm run build`                                                                                 | 0    | Production build passed on Windows x64                                                           |
-| `npm run build:runtime`                                                                         | 0    | Worker/operator bundles built                                                                    |
-| `npm run test:boundary`                                                                         | 0    | Production anonymous/bypass boundaries passed                                                    |
-| `npm run test:backup`                                                                           | 0    | Local cryptography/negative controls; default mode has no DB restore                             |
-| `npm run test:password:ui`                                                                      | 0    | Synthetic HTTPS production app, login/CSRF/reset, MCP/lessons and mobile passed                  |
-| `npm run test:ui:live`                                                                          | 0    | Operational UI/lifecycle with deterministic external substitutes passed                          |
-| `npm run test:chat:ui`                                                                          | 0    | Composer keyboard/recovery/responsive checks passed                                              |
-| `npm run test:ui`                                                                               | 0    | Isolated demo interactions passed                                                                |
-| Initial `npm run test:a11y` without `UI_BASE_URL`                                               | 1    | Wrong local default origin; `Cannot GET /chat`; assertions retained                              |
-| `npm run test:a11y` with `UI_BASE_URL=<LOCAL_DEMO_ORIGIN>`                                      | 0    | Same suite against isolated app; ten routes, three widths, AA and keyboard                       |
-| `npm run build:release`                                                                         | 1    | Blocked: native Linux ARM64 required; no new tar built                                           |
-| `node scripts/verify-native-artifact.mjs`                                                       | 1    | Blocked by platform assertion before reading/executing an artifact                               |
-| `initdb -D <SCRATCH_PGDATA> -U rc_operator --auth=trust --encoding=UTF8 --no-locale`            | 0    | Dedicated synthetic loopback PostgreSQL cluster only                                             |
-| `node --import tsx <LOCAL_HARNESS>/rehearse.ts <SCRATCH_ROOT> <SCRATCH_PORT> <CACHED_TAR>`      | 0    | Real PG migration/idempotency, pre-change backup, upgrade/grants and encrypted restore           |
-| `node --import tsx scripts/restore-check.ts`                                                    | 0    | Separate scratch DB/Markdown verified after `pg_restore`                                         |
-| `node --import tsx <LOCAL_HARNESS>/locks.ts <SCRATCH_ROOT> <SCRATCH_PORT>`                      | 0    | Observed 009's existing-table lock during the transaction                                        |
-| `node <LOCAL_HARNESS>/verify-cached-artifact.mjs <CACHED_TAR> <CACHED_IDENTITY> <LOCAL_RESULT>` | 0    | Cached tar/manifest/source/architecture labels and nine SQL checksums match; no native execution |
-
-The first local harness setup attempt exited 1 because its relative imports were
-copied one directory too high. The fixture placement was corrected and the full
-rehearsal rerun. A relative wrapper invocation was also corrected after a working
-directory change. The first a11y invocation lost its explicit demo origin across
-shell calls and hit the wrong local default; the same unchanged suite was rerun
-with `UI_BASE_URL` set to the isolated app. These are recorded invocation errors,
-not removed/relaxed assertions. No application fix or dependency change was needed.
-The two native commands' nonzero exits remain unsupported-platform results.
-
-## Known limitations
-
-- Picomatch advisory [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf)
-  remains a release risk. The fresh install reports 16 high dependency findings;
-  no forced downgrade, override or audit suppression was applied. No fresh
-  upstream advisory query was made in this local-only task.
-- Real Nexos/Paperclip/n8n contracts and a bounded real coding workflow are not
-  newly verified here. No paid completion or external integration probe ran.
-- Branch protection was last documented as unprotected; it was neither inspected
-  nor changed here. Coding stays disabled until protection and runtime gates are
-  separately verified.
-- Missing Claude quota observation remains unknown. No synthetic percentages or
-  token-based allowance were substituted and no local personal log collector ran.
-- PR #15's inconsistent queued workflow is historical context from current status,
-  not freshly rechecked or repaired here.
-- No fresh ARM64 execution, current Oracle inventory/readiness, off-host/Drive
-  recovery or host-compatible rollback was established. Earlier evidence must
-  retain its date/source and cannot become this run's deployment evidence.
-
-## Separate status categories
-
-| Category                  | Status and evidence                                                                                                 |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| requested                 | Local release review package and draft PR requested; no runtime action authorized                                   |
-| implemented               | Existing payload at the exact source SHA; this branch adds the review documentation                                 |
-| tested locally            | Fresh Windows x64 checks plus real isolated PostgreSQL 18.6 migration/restore and cached artifact hash checks       |
-| deterministic substitutes | Unit/provider adapters, PGlite tests, synthetic loopback TLS, no-writer observer and local off-host-copy substitute |
-| real external service     | None contacted for runtime verification; no Oracle, DNS, certificates, Drive, model or Paperclip access             |
-| ARM64                     | Fresh build/execution blocked on this Windows host; cached artifact/dated CI evidence is not fresh verification     |
-| deployed                  | This candidate was not deployed by this task; previous host release/configuration preserved untouched               |
-| verified after deploy     | Not performed; the validation plan above remains pending                                                            |
+007 adds model usage. 008 adds Tool Hub audit metadata without tool arguments or
+results. 009 adds lessons and message feedback, without rewriting or backfilling
+existing data. In the earlier local PostgreSQL rehearsal, 009's foreign key
+held a `ShareRowExclusiveLock` on existing `messages` until commit. Allow for
+blocked writers and enforce a lock timeout.
+[November 18 PostgreSQL rehearsal](INTEGRATION-VALIDATION.md#2026-11-18-local-release-package-revalidation)
 
 ## Exact remaining owner approvals
 
-After resolving the activation/rollback blockers and refreshing affected artifact
-identity, obtain **separate, concrete approvals** for:
+Approve each package separately and record the target, operator, exact inputs
+and UTC start/end privately. Shell snippets are future operator steps. In them,
+variables such as `RELEASE_DIR`, `ACTIVE_SHA` and paths to private JSON files
+refer to values the operator sets in the protected terminal.
 
-1. **Server SQL:** exact unapplied migration names/checksums, coordinated pre-change
-   backup/recovery proof, maintenance window and runtime grants on `<ORACLE_HOST>`.
-2. **Production activation:** exact source/tar/manifest/target/config/network hashes,
-   intended effects, observation window and reviewed rollback plan. Review the
-   completed private package before producing its expiring acknowledgement.
-3. **Drive recovery test:** any initial account/client/scope authorization plus one
-   exact ciphertext backup UUID/hash/size/destination, retrieval/decryption and
-   isolated restore using the independent recovery secret. No retention deletion
-   or recurring schedule is implied.
-4. **Host rollback drill:** exact compatible release/configuration and maintenance
-   window; if data restore is required, explicit recovery point and accepted loss
-   of later writes. Never use a process rollback approval as data-restore consent.
+### A. Server SQL
 
-Neither a draft PR nor passing local tests grants these approvals. No merge to
-`main` or the development target is included in this package preparation.
+**Owner by hand.** Sign in to `<ORACLE_HOST>` with your operator identity and
+authorize the maintenance window. Supply the backup and migration credentials
+in protected libpq files and `operator.env`. Approve the exact ledger diff,
+GRANT roles and verified backup receipt. Reserve **30–60 minutes**, including
+5–15 minutes for the snapshot and 5–20 minutes for isolated restore on a small
+installation. If the active release has six migrations, reserve a contiguous
+window with B and settle D before opening the migration window.
+
+1. Read the live ledger using the private migration service. Compare
+   the ordered output against the table and save it privately. The expected
+   pending rows are the three bold entries. Stop for a missing prefix, a
+   changed checksum, unexpected SQL, or any disagreement with the reviewed
+   pending list. Verify the candidate tar and release manifest as in B.
+   Repeat the ledger read after quiescence and before executing SQL.
+
+   ```sh
+   psql -X -v ON_ERROR_STOP=1 "service=$MIGRATION_SERVICE" \
+     -c 'SELECT name, checksum, applied_at FROM public.schema_migrations ORDER BY name'
+   ```
+
+2. Freeze owner writes, uploads, Markdown edits and any external writers. Stop
+   both live Control Center units and confirm each is inactive. Record
+   `<LAST_RETAINED_WRITE_UTC>`, the active immutable release and its config hashes.
+   Prepare protected backup options as in C using the **active** release's
+   manifest identity and schema, and a `cc-backup` libpq service for the live
+   application DB. Snapshot coordinated PostgreSQL and Markdown/history/conflicts
+   with the verified `ops/backup.mjs`. Encrypt locally. Record the UUID, the
+   ciphertext receipt and their hashes. Confirm both units are inactive before
+   running the snapshot command. If either backup command fails,
+   stop the sequence and reconcile before retrying.
+
+   ```sh
+   sudo systemctl stop "control-center-web@${ACTIVE_SHA}.service" \
+     "control-center-worker@${ACTIVE_SHA}.service"
+   sudo systemctl show -p ActiveState "control-center-web@${ACTIVE_SHA}.service" \
+     "control-center-worker@${ACTIVE_SHA}.service"
+   "$RELEASE_DIR/bin/node" "$RELEASE_DIR/ops/backup.mjs" snapshot "$BACKUP_OPTIONS"
+   "$RELEASE_DIR/bin/node" "$RELEASE_DIR/ops/backup.mjs" encrypt "$BACKUP_OPTIONS" "$BACKUP_ID"
+   ```
+
+   On a dedicated recovery machine, securely transfer only the encrypted
+   `encrypted/<BACKUP_UUID>` tree and `runs/<BACKUP_UUID>/encrypted-receipt.json`
+   into the same relative directories in the managed root. Stage the matching
+   active release as in C. Prepare private restore options with `restoreSource`
+   set to `encrypted` and `rcloneConfig` pointing to the recovered crypt
+   configuration. Set `cc-restore` and `RESTORE_DATABASE_URL` to the same
+   dedicated disposable loopback instance. Run:
+
+   ```sh
+   "$RECOVERY_TOOL_DIR/bin/node" "$RECOVERY_TOOL_DIR/ops/backup.mjs" restore \
+     "$LOCAL_RESTORE_OPTIONS" "$BACKUP_ID"
+   ```
+
+   Review `restore_verified` and match its UUID to the encrypted receipt. Keep
+   the receipt and proof at the protected paths in the activation example.
+
+3. Verify lock and statement timeouts for the migration connection, for example
+   5 seconds and 120 seconds using `PGOPTIONS` and `SHOW`. Review the timeouts
+   against the approved window. Run the bundled migrator from its release
+   directory with `NODE_ENV=production` and `MIGRATION_DATABASE_URL` in the
+   protected operator env. It applies the approved pending batch in one
+   transaction under an advisory lock. Then apply the shipped grants in a
+   separate transaction as the application DB owner.
+
+   ```sh
+   cd "$RELEASE_DIR"
+   PGOPTIONS='-c lock_timeout=5s -c statement_timeout=120s' \
+     bin/node --env-file="$OPERATOR_ENV" dist/migrate.mjs
+   PGOPTIONS='-c lock_timeout=5s -c statement_timeout=120s' \
+     psql -X --single-transaction -v ON_ERROR_STOP=1 \
+       -v runtime_role="$WEB_ROLE" -v worker_role="$WORKER_ROLE" \
+       -f ops/postgres/roles.sql "service=$DB_OWNER_SERVICE"
+   ```
+
+4. Check the final ordered ledger and run `dist/migrate.mjs --check` from
+   `RELEASE_DIR` with each protected runtime env. Verify web and worker CRUD on
+   the four new tables (`model_usage`, `tool_calls`, `lessons`,
+   `message_feedback`) via privilege queries. Both runtime roles require
+   schema `USAGE` and ledger `SELECT` only. Check schema `CREATE` and
+   ledger writes are denied, web can read `auth_user`/`auth_account` and
+   write `auth_session`/`auth_login_budget`, and worker has no auth
+   privileges. Check role inheritance/ownership too. Keep migration identity
+   out of runtime. Record grants and checks before B.
+
+   ```sh
+   cd "$RELEASE_DIR"
+   bin/node --env-file="$WEB_ENV" dist/migrate.mjs --check
+   bin/node --env-file="$WORKER_ENV" dist/migrate.mjs --check
+   ```
+
+**Failure and undo.** If the coordinated backup or restore proof fails, stop
+before SQL. Lock/DDL failure aborts the migration transaction. Re-read the
+ledger before restarting the unchanged release. If grants fail after SQL
+commits, keep writers stopped, inspect the recorded state and reconcile the
+reviewed grants before activation. The six-migration release rejects an
+upgraded schema. Use D's separately approved recovery path if the upgrade has
+to be undone after commit.
+
+### B. Production activation
+
+**Owner by hand.** Sign in to `<ORACLE_HOST>` and the existing owner account.
+Provide exact root-only web and worker envs privately, preserving the owner
+subject and auth/session secret. Review and record the exact values below,
+then create the expiring acknowledgement only after approving the complete
+review file. Reserve **25–40 minutes**, with **10 minutes of observation**
+after readiness and any approved restart. Agree on A's coordinated outage and
+D's rollback gate before taking the application offline.
+
+1. Match the candidate source, tar size, tar hash and embedded manifest hash to
+   the exact release table. Keep the verified tar at
+   `/var/lib/control-center/incoming/<RELEASE_SHA>.tar.gz`. Inspect the archive
+   for traversal and escaping links, stage into a new root-owned release
+   directory following the [private worksheet](PHASE-6-RELEASE-REVIEW.md), and
+   verify the staged payload against its manifest before using its bundled Node
+   or operator tools.
+2. Hash the actual bytes of `/etc/machine-id`, the candidate and previous
+   protected env pairs and `/etc/control-center/network-plan.json` using
+   `sha256sum`. Privately record `<TARGET_MACHINE_SHA256>`,
+   `<WEB_ENV_SHA256>`, `<WORKER_ENV_SHA256>`, `<NETWORK_PLAN_SHA256>`
+   and the previous manifest/env digests. Inspect the effective unit settings,
+   available disk (at least 5 GiB for activation), existing HTTPS route and
+   valid certificate, and bound loopback listeners against the reviewed plan.
+   Resolve drift before signing. Review the A recovery proof and backup receipt
+   and hash the exact protected JSON bytes. These private hashes have to be
+   captured on the reviewed target before approval.
+
+   ```sh
+   sudo sha256sum /etc/machine-id /etc/control-center/network-plan.json \
+     "$WEB_ENV" "$WORKER_ENV" "$PREVIOUS_WEB_ENV" "$PREVIOUS_WORKER_ENV" \
+     /var/lib/control-center/recovery-proof.json \
+     /var/lib/control-center/prechange-backup-receipt.json
+   ```
+
+3. Confirm A's exact nine-row schema and D's verified nine-schema-compatible
+   rollback release with matching protected flags and a tested password
+   boundary. Ensure the runbook accounts for the actual active/stopped units.
+   Match the ordered `schema` array to the verified `release.json`, including
+   all nine entries. The example proposes D's nine-migration CI candidate as
+   `previous`. Use the example only after privately verifying the proposed
+   rollback target and substituting the protected values.
+
+   ```json
+   {
+     "version": 1,
+     "commit": "29eaa9e7ac5614f4555f740f6a946772549fcdc4",
+     "artifactSha256": "940f4354e52f105ffec65ab02ca07b379175c5e61d3d2cc573923e64906e6774",
+     "manifestSha256": "98a1ebe77e9c0df73f694677d67dfcda4786c51e18923b4eaf22408f8027891b",
+     "targetMachineSha256": "<TARGET_MACHINE_SHA256>",
+     "hostname": "<APP_HOSTNAME>",
+     "port": 3210,
+     "dataRoot": "/var/lib/control-center",
+     "executionEnabled": false,
+     "liveModelEnabled": true,
+     "migrationsAppliedSeparately": true,
+     "schema": [
+       {
+         "name": "001_foundation.sql",
+         "checksum": "c00b67edfdb0a70e8c79f190b5d6f455906e433c5f4ae3126b25825f3e351ba0"
+       },
+       {
+         "name": "002_orchestration.sql",
+         "checksum": "0a830ffef3ef34b7738d747c8d944da1284ce04e817bcfe3e10de82cf58af7cb"
+       },
+       {
+         "name": "003_automations.sql",
+         "checksum": "963ed73006f741998e12e81481d9c087ba132ae2a4d90024de56c37d38d479dc"
+       },
+       {
+         "name": "004_knowledge.sql",
+         "checksum": "77304113926cd0269a366eee7925edd2be34057d7eeb791d741a0e472a37085d"
+       },
+       {
+         "name": "005_improvements.sql",
+         "checksum": "11a1ec1e7e8d78ad49b2feebd42814b7fc03dfd59f17de8752aa708c90baf78f"
+       },
+       {
+         "name": "006_owner_auth.sql",
+         "checksum": "a25b5526e24cedf857f43f5becb91e3149eb442f60768b8989c6e5d5513b29b2"
+       },
+       {
+         "name": "007_model_usage.sql",
+         "checksum": "d530823bd784894d06f2fe0041231f04f1e44aa0bf438213d1608a43aa8aef42"
+       },
+       {
+         "name": "008_tool_calls.sql",
+         "checksum": "3bd5a426733f47677bdc3fce76b0e7a70cbcd26555947e5ad48b6adf0eac0b02"
+       },
+       {
+         "name": "009_lessons.sql",
+         "checksum": "b3d86693ebec7248e58650186e41e59db9e25ff59d56a382fc32dfde57c0d879"
+       }
+     ],
+     "configSha256": {
+       "web": "<WEB_ENV_SHA256>",
+       "worker": "<WORKER_ENV_SHA256>"
+     },
+     "networkPlanSha256": "<NETWORK_PLAN_SHA256>",
+     "recovery": {
+       "emptyInitialDatabase": false,
+       "proofSha256": "<RECOVERY_PROOF_SHA256>",
+       "backupReceiptSha256": "<BACKUP_RECEIPT_SHA256>"
+     },
+     "previous": {
+       "commit": "788a27783c7547ac34e8c4e684ce528ff35cba45",
+       "manifestSha256": "958a5ad22aff0dbaeea85647b9ebedb926fa486d742394dc352cab75de4b754b",
+       "configSha256": {
+         "web": "<PREVIOUS_WEB_ENV_SHA256>",
+         "worker": "<PREVIOUS_WORKER_ENV_SHA256>"
+       },
+       "supportsCurrentSchema": true,
+       "passwordBoundaryVerified": true
+     }
+   }
+   ```
+
+   The `recovery` hashes refer to
+   `/var/lib/control-center/recovery-proof.json` and
+   `/var/lib/control-center/prechange-backup-receipt.json` respectively.
+   Review the intended effects with the owner. Nexos chat remains available with
+   its current bounds and can spend on owner-initiated requests.
+   `LIVE_MODEL_ENABLED` is exactly `true`, and `LIVE_DELEGATION_ENABLED`,
+   `N8N_EXECUTION_ENABLED` and `IMPROVEMENT_EXECUTOR_ENABLED` are exactly
+   `false` in each reviewed web/worker config. Leave `TOOL_HUB_TOKEN` absent.
+   The activation check does not attest Tool Hub configuration, so inspect it
+   privately in both releases. Verify owner identity/storage continuity and
+   that the plan uses the existing network/TLS setup. A paid Nexos smoke test
+   would require separate approval.
+
+4. Hash the completed review file. The owner creates root-only `approval.json`
+   with `approvedBy: "owner"`, `action: "activate"`, `packageSha256` equal to
+   that review file digest and `expiresAt` set to an explicit UTC time within
+   24 hours. After updating the maintenance log, run as root on Linux ARM64.
+
+   ```sh
+   sudo "$RELEASE_DIR/bin/node" "$RELEASE_DIR/ops/deploy.mjs" activate "$REVIEW_JSON" "$APPROVAL_JSON"
+   ```
+
+5. Inspect the protected deployment result, both unit states and effective
+   release PIDs. Check public HTTPS `/api/health`, unauthenticated workspace
+   rejection, denial of spoofed identity headers, valid owner login and secure
+   session cookie, owner-scoped readiness, and logout/session revocation.
+   Verify same-SHA worker heartbeat, data/history reads and bounded resource
+   use for ten minutes. Reconcile the deployment lock once the observed outcome
+   and both units are confirmed.
+
+**Failure and undo.** A digest, configuration, schema or preflight mismatch
+stops activation. On candidate startup/readiness failure the activator stops
+the candidate and attempts the reviewed previous pair, then verifies readiness.
+After a later access, heartbeat or resource failure, follow D's compatible
+switch procedure. If a stop or fallback is uncertain, keep writers frozen,
+inspect both pairs and preserve the lock and evidence before retrying. A
+data restore requires the separate recovery decision in D.
+
+### C. One-shot Drive recovery test
+
+**Owner by hand.** Choose and record the backup-owning Google account
+`<OWNER_BACKUP_GOOGLE_ACCOUNT>` and project `<GOOGLE_CLOUD_PROJECT>`. Sign in to
+that exact account, enable Drive API for the dedicated project if needed, and
+choose/create the dedicated **Desktop app** OAuth client
+`<DRIVE_DESKTOP_CLIENT_ID>`. If the consent screen is in Testing, add your
+backup account as the test user. Enter the client credentials yourself into
+protected `rclone config`, select `drive.file`
+(`https://www.googleapis.com/auth/drive.file`), and verify the account,
+client and requested scope on Google's consent screen before authorizing.
+The client, refresh token, config passphrase, crypt password and salt stay in
+protected storage. Retain the crypt password and salt independently off Oracle.
+Budget **10–20 minutes** for OAuth, **5–15 minutes** of writer downtime for the
+snapshot, then **20–60+ minutes** for encryption, transfer and recovery.
+[rclone Drive scopes](https://rclone.org/drive/#scopes)
+
+1. Set up protected directories `runs`, `encrypted`, `retrieved`, and
+   `restores` under the managed root. Set `cc-local` to type `crypt` pointing
+   at `/var/lib/control-center/encrypted` with standard filename and directory
+   name encryption. Set `cc-drive` to type `drive` with `scope = drive.file`.
+   Check free quota and retention headroom privately. An rclone config password,
+   if used, is supplied through protected `RCLONE_CONFIG_PASS`.
+2. Sign in to the approved snapshot host. Set up owner-protected backup options
+   JSON with keys `root`, `knowledge`, `release`, `rcloneConfig` and
+   `externalWritersStopped`. Use `/var/lib/control-center` as `root`, its
+   managed `knowledge` directory, the **currently running** release manifest
+   plus its `manifestSha256` field, and the path to the protected rclone config.
+   Set `externalWritersStopped` to `true` only after stopping both active
+   units and verifying all external writers are quiesced. Supply protected
+   `PGSERVICEFILE`/`PGPASSFILE` for `cc-backup`. Run `snapshot` once as in A
+   and record the returned UUID. After a verified coordinated snapshot, resume
+   the same units and owner access, then run `encrypt` for that UUID.
+3. Approve exactly one ciphertext receipt, its UUID, byte count, hash and
+   destination `cc-drive:control-center-encrypted-backups/<BACKUP_UUID>`.
+   Hash `runs/<BACKUP_UUID>/encrypted-receipt.json` and the exact rclone config.
+   Create the protected acknowledgement with `approvedBy: "owner"`,
+   `action: "upload-one-backup"`, `id`, `receiptSha256`,
+   `rcloneConfigSha256`, `destination` and an explicit `expiresAt` within
+   24 hours. Upload that single UUID and confirm its immutable copy and remote
+   ciphertext check pass.
+
+   ```sh
+   "$RELEASE_DIR/bin/node" "$RELEASE_DIR/ops/backup.mjs" upload \
+     "$BACKUP_OPTIONS" "$BACKUP_ID" "$UPLOAD_APPROVAL"
+   ```
+
+4. On a separate approved Linux ARM64 recovery machine, stage the verified
+   tooling, the snapshot release at its immutable path, and the retained
+   ciphertext receipt at `runs/<BACKUP_UUID>/encrypted-receipt.json`. Prepare
+   private recovery options pointing to a recovery rclone config. Recreate the
+   crypt config from the independently retained secret and salt and provide
+   the approved Drive access. Set `restoreSource` to `retrieved` so the test
+   uses the downloaded bytes. Set `cc-restore` and `RESTORE_DATABASE_URL`
+   to the same dedicated loopback scratch PostgreSQL instance, with credentials
+   entered privately and no route to production. Retrieve, verify ciphertext,
+   decrypt and create a disposable restore DB with the shipped tools.
+
+   ```sh
+   "$RECOVERY_TOOL_DIR/bin/node" "$RECOVERY_TOOL_DIR/ops/backup.mjs" retrieve \
+     "$DRIVE_RESTORE_OPTIONS" "$BACKUP_ID"
+   "$RECOVERY_TOOL_DIR/bin/node" "$RECOVERY_TOOL_DIR/ops/backup.mjs" restore \
+     "$DRIVE_RESTORE_OPTIONS" "$BACKUP_ID"
+   ```
+
+5. Confirm `retrieved_and_verified` and `restore_verified` with the same UUID.
+   Record the disposable database name and privately review exact schema,
+   one owner, owner-scoped data and Markdown/history hashes. Compare the
+   receipt, representative records and recovery duration with the snapshot.
+   Keep the ciphertext, receipt and private proof. The approval covers one
+   upload and recovery, with zero retention deletions and no recurring job.
+
+**Failure and undo.** Check quota, consent or scope on OAuth failure. On
+partial upload, inspect the retained attempt marker and remote receipt before
+any retry. On a hash, wrong-key or restore failure, retain the ciphertext and
+scratch evidence with production isolated. Release the write freeze and
+recheck the original units if interrupted during snapshot. You can revoke the
+test OAuth grant manually if access is no longer wanted. Leave the uploaded
+object in place pending separately approved retention.
+
+### D. Host rollback drill
+
+**Owner by hand.** Sign in to `<ORACLE_HOST>` for the approved drill window.
+Verify the running release and private env digests. Provide the owner login
+for access checks and any recovery credentials privately. Approve **25–40
+minutes** for a compatible switch, including **10 minutes of observation**.
+Reserve **10–40+ additional minutes** for a data restore drill, subject to
+volume. Agree on the exact restart target and failure cutoffs before stopping
+services.
+
+1. The last documented prior release is
+   `d69a8c1345c1ef3cccd21341ea964a5bf2a1ce8c`, with matching
+   `/etc/control-center/releases/<PREVIOUS_SHA>/{web,worker}.env`. Confirm its
+   actual identity and record its manifest and both protected config hashes
+   privately. That release expects 001–006 and refuses 001–009. To authorize
+   a process-only switch after SQL, select a retained release with the exact
+   nine-migration ledger and a verified password boundary. The proposed target
+   for the compatibility rehearsal is `788a27783c7547ac34e8c4e684ce528ff35cba45`
+   with tar SHA-256
+   `685d75a98e669c8cc9ab3bcb6f91e1f0681f6dc238d2d2b10c6cd4a388b19285` and manifest
+   SHA-256 `958a5ad22aff0dbaeea85647b9ebedb926fa486d742394dc352cab75de4b754b`.
+   Its downloaded manifest has the identical nine entries and native CI passed
+   password login and runtime-role checks. Record and verify its protected
+   env digests privately. Rehearse both releases against a restored, isolated
+   nine-migration copy before approving a host switch.
+   Verify schema with `dist/migrate.mjs --check`, matching execution flags,
+   owner login, anonymous denial and the matching worker heartbeat. There is
+   currently no host-verified compatible target.
+   [Prior ARM64 job](https://github.com/Clepperis/control-center/actions/runs/44901565159/job/136838375212) ·
+   [Prior artifact](https://github.com/Clepperis/control-center/actions/runs/44901565159/artifacts/14706137958)
+2. For an approved compatible host drill, freeze writes and record current
+   units and readiness. Stop the active pair. Verify both are inactive before
+   starting the exact approved previous pair.
+
+   ```sh
+   sudo systemctl stop "control-center-web@${ACTIVE_SHA}.service" \
+     "control-center-worker@${ACTIVE_SHA}.service"
+   sudo systemctl show -p ActiveState "control-center-web@${ACTIVE_SHA}.service" \
+     "control-center-worker@${ACTIVE_SHA}.service"
+   sudo systemctl start "control-center-web@${ROLLBACK_SHA}.service" \
+     "control-center-worker@${ROLLBACK_SHA}.service"
+   ```
+
+   Perform B's health, owner access and same-release heartbeat checks.
+   Stop the rollback pair and confirm both units are inactive. Start the
+   original active pair again, repeat B's checks and observe for ten minutes
+   before lifting the freeze. This path changes process/config only, with no
+   data restoration and no discarded writes.
+
+3. If the six-migration release is the only rollback target, run the **data
+   recovery drill in isolation**. The designated recovery point is A's
+   `<PRECHANGE_BACKUP_UUID>` at `<LAST_RETAINED_WRITE_UTC>` with
+   `<BACKUP_RECEIPT_SHA256>`. Verify those fields against the receipt and
+   restore its database and Markdown together using A's local restore steps.
+   Run the six-migration release's schema and restore checker against that
+   disposable copy and verify owner access and saved history there. This drill
+   discards no production writes. A future live cutover to the restored point
+   requires separate approval covering the actual cutoff and loss list.
+   The live state would revert all later chats/messages, sessions and owner
+   credential changes, Markdown/history/conflicts and later operational rows,
+   including usage, tool calls, lessons and feedback. A verified continuous
+   freeze from the snapshot through rollback can establish zero intervening
+   writes. Keep the current live database and Markdown evidence intact until the
+   owner decides. Keep B gated while the only available prior release needs a
+   separately approved live data restore.
+
+**Failure and undo.** If the previous pair refuses schema/readiness or access
+checks, stop it, verify its processes exited and return to the verified original
+pair if compatible with the untouched live data. Keep writes frozen if either
+stop is uncertain or the original pair fails. Record the exact failing release,
+unit state and checks before retry. A failed isolated restore leaves the
+disposable DB and files available for diagnosis.
+
+## Dependency audit
+
+On 2026-11-21, both `npm audit` and `npm audit --omit=dev` reported zero
+vulnerabilities (exit 0) on the unchanged candidate lockfile. It resolves
+picomatch 4.0.7 and 2.3.2. GitHub withdrew GHSA-fc5q-39xc-vjpf on 2026-11-18
+and lists no patched version. The npm registry's latest remains 4.0.7. No
+dependency PR was opened. The earlier audit counts are historical.
+[GitHub advisory](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) ·
+[npm registry version history](https://www.npmjs.com/package/picomatch?activeTab=versions)
+
+## Status
+
+| Category       | Evidence                                                                                                                                                                                                                                                                                                                                                                                          |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Requested      | Updated release candidate and four separate owner approval packages in [draft PR #20](https://github.com/Clepperis/control-center/pull/20).                                                                                                                                                                                                                                                       |
+| Implemented    | Candidate points to the post-#21 source. The artifact, manifest, SQL checksums and live-chat review decision are pinned above.                                                                                                                                                                                                                                                                    |
+| Tested locally | Verified tar/manifest/source identity, nine SQL checksums, packaged ops parity and the prior artifact's hashes and nine-entry schema. Passed 13 deployment/password tests, both audit commands and documentation checks. The [November 18 rehearsal](INTEGRATION-VALIDATION.md#2026-11-18-local-release-package-revalidation) provides earlier PostgreSQL upgrade and encrypted restore evidence. |
+| CI-verified    | [Exact source run](https://github.com/Clepperis/control-center/actions/runs/44902204714) passed Linux validation, native ARM64 build/execution, real PostgreSQL runtime checks and encrypted isolated restore.                                                                                                                                                                                    |
+| Not done       | A–D require owner approval and execution. Host inventory, private hashes, compatible rollback, live Nexos, off-host Drive recovery, and post-activation observations remain unverified.                                                                                                                                                                                                           |

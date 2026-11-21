@@ -67,16 +67,13 @@ not repaired.
 
 ## Next steps
 
-1. Review the [2026-11-18 release-candidate package](RELEASE-CANDIDATE.md) first:
-   exact cached artifact, fresh local checks, migration/grant and real local
-   PostgreSQL restore evidence. Native execution was blocked on Windows. Resolve
-   the live-model activation-policy mismatch and incompatible old-schema rollback
-   before production approval. No real service was rechecked in that local task.
-   Review the candidate and its checks, integrate into the development target,
-   and explicitly reconcile superseded PRs. Choose the eventual `main` path.
-2. Build the exact integrated native artifact. Review all nine migrations,
-   coordinate a data/Markdown backup, apply SQL separately and reapply runtime
-   grants. Activation never applies migrations.
+1. Review the [release candidate](RELEASE-CANDIDATE.md) for the exact post-#21
+   Linux ARM64 artifact, checksums and four owner approvals. PR #21 enables the
+   owner to preserve Nexos chat through activation. The host rollback target
+   still needs verification. Review draft PR #20 into the development target.
+2. Confirm the pending SQL against the private migration ledger and verify a
+   coordinated database/Markdown backup before separately approving SQL and
+   reapplying runtime grants. Activation never applies migrations.
 3. Complete encrypted off-host backup retrieval, decryption and isolated restore,
    plus a compatible-release rollback drill. Retain the existing immutable
    release and protected configuration.
@@ -92,17 +89,10 @@ not repaired.
 
 ## Dependency audit
 
-The audit reports 16 high dependency findings derived from picomatch advisory
-[GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf).
-The registry's latest version is 4.0.7 and the advisory lists no patched version.
-Five findings remain in the production-only audit because Better Auth's optional
-Vitest peer includes the installed testing stack in that dependency graph.
-Passing tests do not resolve the advisory.
-
-Application source has no direct picomatch imports, which limits identified
-exposure but does not prove zero transitive exposure. Do not force npm's
-suggested Vitest/Next downgrades or patch a third-party parser without a separate
-reviewed dependency change. Recheck the advisory and lockfile before release.
+On 2026-11-21, `npm audit` and `npm audit --omit=dev` reported zero findings
+on the candidate lockfile. GitHub withdrew the advisory, lists no patched
+version and the npm registry's latest is still 4.0.7. The previous 16 full and
+five production-only findings are historical. [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf)
 
 ## Verification
 

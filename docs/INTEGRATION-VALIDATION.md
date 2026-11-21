@@ -86,10 +86,9 @@ Native Linux ARM64 artifact execution, real PostgreSQL runtime-role checks and
 database backup/restore run in `arm64-release` CI. Check the final source commit's
 run and artifact hashes separately; Windows checks cannot prove them.
 
-The dependency audit is not clean: the unpatched picomatch advisory and transitive
-production dependency path are documented in current status. Recovery also
-remains incomplete: local encryption tests do not establish off-host recovery
-or a compatible production rollback.
+This historical run reported picomatch findings. The latest dependency audit
+and advisory status are in [current status](CURRENT-STATUS.md#dependency-audit).
+Off-host recovery and a host-compatible rollback remain pending.
 
 ## 2026-11-18 local release-package revalidation
 
@@ -146,5 +145,5 @@ retained privately. No product code changed. Local orchestration mistakes
 demo origin) were corrected before complete reruns. The initial a11y failure is
 recorded, and all assertions were retained. Successful check results above come
 from the actual reruns. Unsupported-platform failures remain
-explicit. Required target approvals and the live-model-policy/rollback blockers
-are listed in the release-candidate package.
+explicit. The later [release candidate](RELEASE-CANDIDATE.md) records the live
+model policy fix, refreshed native evidence and remaining owner approvals.

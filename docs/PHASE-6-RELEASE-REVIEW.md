@@ -5,10 +5,10 @@ The current public approval-package draft is
 private operator template; do not copy target values into the public draft.
 For an existing installation, preserve the previous release/configuration and
 record actual current state instead of repeating initial provisioning/bootstrap.
-The public draft identifies two unresolved gates: the present activation code
-requires model calls off while the desired update preserves chat on, and a
-six-migration previous release fails the upgraded nine-migration schema check.
-Neither a placeholder nor an attestation resolves those gates.
+PR #21 lets this update preserve the reviewed Nexos chat setting. A six-migration
+previous release fails the upgraded nine-migration schema check. Verify a
+compatible rollback target and exact protected configuration before approval.
+[Activation change](https://github.com/Clepperis/control-center/pull/21)
 
 Copy this worksheet into protected operator storage. Never fill real addresses,
 credential values, private logs or audit text into this public file. No live
